@@ -36,6 +36,7 @@ type Page = {
   id: string;
   name: string;
   icon: string;
+  parentId?: string | null;
   widgets: Widget[];
 };
 
@@ -415,6 +416,31 @@ export default function Home() {
 
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
   const theme = THEMES.find((item) => item.id === themeId) ?? THEMES[0];
+  const pageTree = useMemo(() => {
+    const result: Array<{ page: Page; depth: number }> = [];
+    const visited = new Set<string>();
+    const ids = new Set(pages.map((page) => page.id));
+    const visit = (page: Page, depth: number) => {
+      if (visited.has(page.id)) return;
+      visited.add(page.id);
+      result.push({ page, depth });
+      pages.filter((candidate) => candidate.parentId === page.id).forEach((child) => visit(child, depth + 1));
+    };
+    pages.filter((page) => !page.parentId || !ids.has(page.parentId)).forEach((page) => visit(page, 0));
+    pages.filter((page) => !visited.has(page.id)).forEach((page) => visit(page, 0));
+    return result;
+  }, [pages]);
+  const activePagePath = useMemo(() => {
+    const path: Page[] = [];
+    const visited = new Set<string>();
+    let current = pages.find((page) => page.id === activePageId);
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      path.unshift(current);
+      current = current.parentId ? pages.find((page) => page.id === current?.parentId) : undefined;
+    }
+    return path;
+  }, [pages, activePageId]);
 
   const themeStyle = {
     "--bg": theme.bg,
@@ -583,11 +609,14 @@ export default function Home() {
     localStorage.setItem("layoutlab:saves", JSON.stringify(Object.fromEntries(next.map((item) => [item.name, item]))));
   };
 
-  const addPage = () => {
+  const addPage = (parentId: string | null = null) => {
     const id = newId("page");
-    setPages((current) => [...current, { id, name: `새 페이지 ${current.length + 1}`, icon: "□", widgets: [] }]);
+    const parent = parentId ? pages.find((page) => page.id === parentId) : undefined;
+    const siblingCount = pages.filter((page) => (page.parentId ?? null) === parentId).length;
+    setPages((current) => [...current, { id, name: parent ? `${parent.name} 하위 ${siblingCount + 1}` : `새 페이지 ${siblingCount + 1}`, icon: parent ? "↳" : "□", parentId, widgets: [] }]);
     setActivePageId(id);
     setSelectedWidgetId(null);
+    setToast(parent ? `‘${parent.name}’ 아래에 하위 페이지를 추가했습니다.` : "최상위 페이지를 추가했습니다.");
   };
 
   return (
@@ -615,8 +644,9 @@ export default function Home() {
           <div className="user-block"><span className="avatar avatar-accent">YL</span><div><strong>워크스페이스</strong><span>관리자 모드</span></div><button>•••</button></div>
           <nav>
             <span className="nav-label">PAGES</span>
-            {pages.map((page) => <button key={page.id} className={activePageId === page.id ? "active" : ""} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><span>{page.icon}</span><b>{page.name}</b><i>{page.widgets.length}</i></button>)}
-            <button className="add-page" onClick={addPage}><span>＋</span><b>새 페이지 추가</b></button>
+            <span className="nav-helper">각 페이지의 ＋로 하위 페이지 추가</span>
+            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><span>{page.icon}</span><b>{page.name}</b><i>{page.widgets.length}</i></button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button></div>)}
+            <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
           <div className="sidebar-bottom"><span><i /> 자동 임시 저장</span><small>이 기기의 브라우저에 보관</small></div>
         </aside>
@@ -630,7 +660,7 @@ export default function Home() {
 
         <section className="workspace-canvas" onClick={() => setSelectedWidgetId(null)}>
           <div className="canvas-head">
-            <div><span className="canvas-kicker">{preview ? "LIVE PREVIEW" : "PAGE CANVAS"}</span><div className="page-title-row"><input value={activePage.name} onChange={(event) => updateActivePage((page) => ({ ...page, name: event.target.value }))} aria-label="현재 페이지 이름" /><span>{activePage.widgets.length} elements</span></div></div>
+            <div><span className="canvas-kicker">{preview ? "LIVE PREVIEW" : "PAGE CANVAS"}</span><div className="page-title-row"><input value={activePage.name} onChange={(event) => updateActivePage((page) => ({ ...page, name: event.target.value }))} aria-label="현재 페이지 이름" />{activePagePath.length > 1 && <span className="page-parent-path">↳ {activePagePath.slice(0, -1).map((page) => page.name).join(" / ")}</span>}<span>{activePage.widgets.length} elements</span></div></div>
             <div className="canvas-meta"><span><i className="dot-online" /> 변경사항 자동 저장</span><span>1440px</span><button aria-label="더 보기">•••</button></div>
           </div>
 
