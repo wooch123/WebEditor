@@ -569,6 +569,9 @@ select:focus-visible,
 .canvas-widget.width-third { grid-column: span 2; }
 .canvas-widget.width-half { grid-column: span 3; }
 .canvas-widget.width-full { grid-column: 1 / -1; }
+.canvas-widget.height-fixed { height: var(--widget-height); min-height: 160px; display: flex; flex-direction: column; }
+.widget-content { min-width: 0; min-height: 0; }
+.canvas-widget.height-fixed .widget-content { flex: 1; overflow: auto; padding-right: 3px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 
 .widget-head {
   min-height: 35px;
@@ -692,6 +695,13 @@ select:focus-visible,
 .width-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .width-buttons button { height: 29px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 8px; cursor: pointer; }
 .width-buttons button.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
+.height-buttons { display: grid; grid-template-columns: 1.25fr repeat(4, 1fr); gap: 4px; }
+.height-buttons button { height: 29px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 8px; cursor: pointer; }
+.height-buttons button.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
+.height-range { min-height: 24px; display: grid; grid-template-columns: 1fr 62px; align-items: center; gap: 8px; }
+.settings-panel .height-range input[type="range"] { height: 18px; padding: 0; border: 0; accent-color: var(--accent); cursor: ew-resize; }
+.settings-panel .height-range input[type="range"]:disabled { opacity: .35; cursor: not-allowed; }
+.height-range output { padding: 4px 6px; border-radius: 5px; background: var(--surface); color: var(--text); font-size: 8px; font-variant-numeric: tabular-nums; text-align: center; }
 .settings-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--line); }
 .settings-actions button { flex: 1; height: 29px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 8px; cursor: pointer; }
 .settings-actions .danger { color: #ff7185; }

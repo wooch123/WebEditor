@@ -28,6 +28,7 @@ type Widget = {
   type: WidgetType;
   title: string;
   width: WidgetWidth;
+  height?: number | "auto";
   settings: Record<string, string>;
 };
 
@@ -154,6 +155,7 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     type,
     title: LABELS[type],
     width: fullTypes.includes(type) ? "full" : type === "poll" ? "half" : "third",
+    height: "auto",
     settings: defaults[type] ?? {},
     ...overrides,
   };
@@ -379,6 +381,16 @@ function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { w
       {hasValue && <label>표시 값<input value={widget.settings.value ?? ""} onChange={(event) => onChange({}, { value: event.target.value })} /></label>}
       {hasCaption && <label>보조 설명<input value={widget.settings.caption ?? ""} onChange={(event) => onChange({}, { caption: event.target.value })} /></label>}
       <label>가로 크기<div className="width-buttons">{(["third", "half", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
+      <label>세로 크기
+        <div className="height-buttons">
+          <button type="button" className={!widget.height || widget.height === "auto" ? "active" : ""} onClick={() => onChange({ height: "auto" })}>자동</button>
+          {[180, 260, 360, 480].map((height) => <button type="button" key={height} className={widget.height === height ? "active" : ""} onClick={() => onChange({ height })}>{height === 180 ? "S" : height === 260 ? "M" : height === 360 ? "L" : "XL"}</button>)}
+        </div>
+        <div className="height-range">
+          <input type="range" min="160" max="600" step="10" disabled={!widget.height || widget.height === "auto"} value={typeof widget.height === "number" ? widget.height : 260} onChange={(event) => onChange({ height: Number(event.target.value) })} aria-label="요소 세로 크기 세부 조절" />
+          <output>{typeof widget.height === "number" ? `${widget.height}px` : "콘텐츠 기준"}</output>
+        </div>
+      </label>
       <div className="settings-actions"><button onClick={onDuplicate}>복제</button><button className="danger" onClick={onDelete}>삭제</button></div>
     </div>
   );
@@ -627,15 +639,16 @@ export default function Home() {
               {activePage.widgets.length === 0 && <div className="empty-canvas"><span>＋</span><h3>첫 요소를 배치해 보세요</h3><p>왼쪽 도구 상자에서 요소를 끌어오거나 클릭하면 이곳에 추가됩니다.</p></div>}
               {activePage.widgets.map((widget) => (
                 <article
-                  className={`canvas-widget width-${widget.width} ${selectedWidgetId === widget.id ? "selected" : ""} ${draggingWidgetId === widget.id ? "is-dragging" : ""} ${dropTarget?.targetId === widget.id ? `drop-${dropTarget.position}` : ""}`}
+                  className={`canvas-widget width-${widget.width} ${typeof widget.height === "number" ? "height-fixed" : "height-auto"} ${selectedWidgetId === widget.id ? "selected" : ""} ${draggingWidgetId === widget.id ? "is-dragging" : ""} ${dropTarget?.targetId === widget.id ? `drop-${dropTarget.position}` : ""}`}
                   key={widget.id}
                   data-widget-id={widget.id}
+                  style={typeof widget.height === "number" ? { "--widget-height": `${widget.height}px` } as CSSProperties : undefined}
                   onDragOver={(event) => { if (!preview) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = "copy"; } }}
                   onDrop={(event) => { if (preview) return; event.preventDefault(); event.stopPropagation(); const type = event.dataTransfer.getData("widget/type") as WidgetType; if (type) addWidget(type); }}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="widget-head"><div>{!preview && <button type="button" className="widget-grip" title="누른 채 이동" aria-label={`${widget.title} 위치 이동`} onPointerDown={(event) => startPointerReorder(event, widget.id)} onPointerMove={trackPointerReorder} onPointerUp={finishPointerReorder} onPointerCancel={cancelPointerReorder}>⠿</button>}<div><h3>{widget.title}</h3>{widget.settings.caption && !["stat", "status", "progress", "profile", "donut", "gauge"].includes(widget.type) && <p>{widget.settings.caption}</p>}</div></div>{!preview && <button className={`settings-trigger ${selectedWidgetId === widget.id ? "active" : ""}`} onClick={() => setSelectedWidgetId((current) => current === widget.id ? null : widget.id)} aria-label={`${widget.title} 설정`}>⚙</button>}</div>
-                  <WidgetContent widget={widget} />
+                  <div className="widget-content"><WidgetContent widget={widget} /></div>
                   {!preview && <div className="widget-drag-label">DRAG TO REORDER</div>}
                   {selectedWidgetId === widget.id && !preview && <SettingsPanel widget={widget} onClose={() => setSelectedWidgetId(null)} onChange={(patch, settings) => updateWidget(widget.id, patch, settings)} onDelete={() => { updateActivePage((page) => ({ ...page, widgets: page.widgets.filter((item) => item.id !== widget.id) })); setSelectedWidgetId(null); }} onDuplicate={() => { const copy = { ...widget, id: newId("widget"), title: `${widget.title} 복사본` }; updateActivePage((page) => ({ ...page, widgets: [...page.widgets, copy] })); setSelectedWidgetId(copy.id); }} />}
                 </article>
