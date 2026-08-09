@@ -262,11 +262,11 @@ select:focus-visible,
 .popover-title strong { font-size: 15px; }
 .popover-title p { color: var(--muted); font-size: 10px; margin: 5px 0 0; }
 
-.theme-popover { width: 486px; }
+.theme-popover { width: 528px; max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
@@ -308,6 +308,8 @@ select:focus-visible,
 .theme-preview i { grid-row: 1 / 3; border-radius: 2px; }
 .theme-preview b,
 .theme-preview em { border-radius: 2px; opacity: .92; }
+.theme-name { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.theme-name > em { flex: 0 0 auto; padding: 2px 3px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); color: var(--accent); font-size: 5px; font-style: normal; letter-spacing: .5px; }
 
 .load-popover { width: 324px; padding-bottom: 10px; }
 .empty-saves { color: var(--muted); font-size: 11px; padding: 20px 8px 25px; text-align: center; }

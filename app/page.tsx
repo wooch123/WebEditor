@@ -44,6 +44,7 @@ type Theme = {
   id: string;
   name: string;
   mode: "dark" | "light";
+  isNew?: boolean;
   bg: string;
   sidebar: string;
   panel: string;
@@ -80,6 +81,16 @@ const THEMES: Theme[] = [
   { id: "coral-night", name: "Coral Night", mode: "dark", bg: "#191515", sidebar: "#221a1a", panel: "#2b2221", surface: "#362b29", elevated: "#453633", line: "#584541", text: "#fff6f3", muted: "#b09c97", accent: "#ff7869", accent2: "#f7c45b", positive: "#68d29b" },
   { id: "orchid-deep", name: "Orchid Deep", mode: "dark", bg: "#17131c", sidebar: "#1f1828", panel: "#292034", surface: "#342940", elevated: "#43344f", line: "#554263", text: "#fcf4ff", muted: "#aa97b3", accent: "#d06cf0", accent2: "#4fc7e8", positive: "#61d6a2" },
   { id: "slate-sky", name: "Slate Sky", mode: "dark", bg: "#12171d", sidebar: "#18202a", panel: "#202b37", surface: "#293744", elevated: "#344554", line: "#415668", text: "#f1f8ff", muted: "#96a9ba", accent: "#55a8ff", accent2: "#5fe0d0", positive: "#6ad8a4" },
+  { id: "obsidian-pulse", name: "Obsidian Pulse", mode: "dark", isNew: true, bg: "#090a0e", sidebar: "#0e1016", panel: "#151823", surface: "#1d2130", elevated: "#272c3d", line: "#343a4d", text: "#f6f7fb", muted: "#8991a6", accent: "#7c5cff", accent2: "#00d7c9", positive: "#35d49a" },
+  { id: "carbon-cyan", name: "Carbon Cyan", mode: "dark", isNew: true, bg: "#0b1012", sidebar: "#101719", panel: "#162124", surface: "#1d2b2f", elevated: "#25363b", line: "#30464c", text: "#eafbfc", muted: "#82a3a7", accent: "#00c7d9", accent2: "#6be7a5", positive: "#4dda9b" },
+  { id: "midnight-electric", name: "Midnight Electric", mode: "dark", isNew: true, bg: "#080d18", sidebar: "#0d1422", panel: "#121d2d", surface: "#19273a", elevated: "#22334a", line: "#2d425c", text: "#f1f6ff", muted: "#869ab6", accent: "#3578ff", accent2: "#9b6cff", positive: "#3dd49a" },
+  { id: "graphite-ruby", name: "Graphite Ruby", mode: "dark", isNew: true, bg: "#111012", sidebar: "#171417", panel: "#20191d", surface: "#2a2025", elevated: "#36282e", line: "#46343c", text: "#fff3f6", muted: "#a58e96", accent: "#f0446a", accent2: "#ff8a5c", positive: "#4fd5a0" },
+  { id: "black-gold", name: "Black Gold", mode: "dark", isNew: true, bg: "#0d0c09", sidebar: "#14120d", panel: "#1d1911", surface: "#272118", elevated: "#332a1e", line: "#443624", text: "#fff8e8", muted: "#a99c80", accent: "#ddaa3d", accent2: "#f2d17b", positive: "#5bd19a" },
+  { id: "neo-indigo", name: "Neo Indigo", mode: "dark", isNew: true, bg: "#0d0b16", sidebar: "#131020", panel: "#1b172b", surface: "#241e38", elevated: "#302748", line: "#40345e", text: "#f7f3ff", muted: "#9c92b4", accent: "#816bff", accent2: "#e25dff", positive: "#4dd7a0" },
+  { id: "forest-matrix", name: "Forest Matrix", mode: "dark", isNew: true, bg: "#0a110e", sidebar: "#0f1914", panel: "#15231c", surface: "#1d2f25", elevated: "#283e31", line: "#365341", text: "#edfff5", muted: "#89a898", accent: "#47d67a", accent2: "#a2e85b", positive: "#5edf9a" },
+  { id: "velvet-plum", name: "Velvet Plum", mode: "dark", isNew: true, bg: "#120c13", sidebar: "#1a111c", panel: "#231726", surface: "#2e1e32", elevated: "#3c2842", line: "#513557", text: "#fff2ff", muted: "#aa8faf", accent: "#d85ad4", accent2: "#ff7c9e", positive: "#5bd5a1" },
+  { id: "steel-orange", name: "Steel Orange", mode: "dark", isNew: true, bg: "#101214", sidebar: "#161a1e", panel: "#1d2329", surface: "#262e35", elevated: "#303a43", line: "#3e4b55", text: "#f5f8fa", muted: "#929fa9", accent: "#ff7a45", accent2: "#49b9ff", positive: "#50d29a" },
+  { id: "polar-night", name: "Polar Night", mode: "dark", isNew: true, bg: "#071014", sidebar: "#0b171d", panel: "#102129", surface: "#172c35", elevated: "#1f3944", line: "#2a4a56", text: "#f0fcff", muted: "#86a8b3", accent: "#65d8ff", accent2: "#a2f06c", positive: "#55dba3" },
   { id: "cloud-blue", name: "Cloud Blue", mode: "light", bg: "#edf3fa", sidebar: "#ffffff", panel: "#f7faff", surface: "#ffffff", elevated: "#e8f0fa", line: "#d7e1ed", text: "#1a2634", muted: "#708094", accent: "#3978f6", accent2: "#00a9a5", positive: "#209b68" },
   { id: "paper-violet", name: "Paper Violet", mode: "light", bg: "#f4f1f8", sidebar: "#fffefe", panel: "#faf8fd", surface: "#ffffff", elevated: "#eee8f5", line: "#ded5e8", text: "#2b2334", muted: "#7b6f88", accent: "#8055c7", accent2: "#df5f8b", positive: "#269669" },
   { id: "sage-studio", name: "Sage Studio", mode: "light", bg: "#edf2ed", sidebar: "#f9fcf8", panel: "#f4f8f3", surface: "#ffffff", elevated: "#e4ece2", line: "#d3ded1", text: "#243127", muted: "#6f7e72", accent: "#4f8f65", accent2: "#cf8c45", positive: "#2d9662" },
@@ -633,8 +644,8 @@ export default function Home() {
           </div>
           <button className="save-button" onClick={saveLayout}>저장 <span>⌘S</span></button>
           <div className="popover-wrap">
-            <button className="theme-button" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>20</span></button>
-            {themeOpen && <div className="theme-popover popover-panel"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 20가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span>{item.name}</span></button>)}</div></div>}
+            <button className="theme-button" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{THEMES.length}</span></button>
+            {themeOpen && <div className="theme-popover popover-panel"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 {THEMES.length}가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div></div>}
           </div>
         </div>
       </header>
