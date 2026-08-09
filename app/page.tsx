@@ -18,7 +18,8 @@ type WidgetType =
   | "board"
   | "editor"
   | "live"
-  | "assign";
+  | "assign"
+  | "poll";
 
 type WidgetWidth = "third" | "half" | "full";
 
@@ -113,6 +114,7 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
     { type: "editor", label: "콘텐츠 에디터", icon: "E", description: "문서 작성" },
     { type: "live", label: "실시간 피드", icon: "L", description: "자동 갱신 카드" },
     { type: "assign", label: "담당자 배정", icon: "A", description: "사람과 업무 연결" },
+    { type: "poll", label: "투표", icon: "V", description: "선택과 결과 집계" },
   ]},
 ];
 
@@ -145,12 +147,13 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     editor: { caption: "공유 문서" },
     live: { caption: "팀 활동을 실시간으로 확인합니다." },
     assign: { caption: "업무 담당자와 마감일" },
+    poll: { caption: "현재 36명 참여", question: "다음 팀 워크숍은 언제가 좋을까요?", option1: "8월 21일 금요일", option2: "8월 28일 금요일", option3: "9월 4일 금요일" },
   };
   return {
     id: newId("widget"),
     type,
     title: LABELS[type],
-    width: fullTypes.includes(type) ? "full" : "third",
+    width: fullTypes.includes(type) ? "full" : type === "poll" ? "half" : "third",
     settings: defaults[type] ?? {},
     ...overrides,
   };
@@ -281,6 +284,45 @@ function AssignmentPreview() {
   );
 }
 
+function PollPreview({ settings }: { settings: Record<string, string> }) {
+  const options = [settings.option1, settings.option2, settings.option3].map((option, index) => option?.trim() || `선택지 ${index + 1}`);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [votes, setVotes] = useState([18, 11, 7]);
+  const [submitted, setSubmitted] = useState(false);
+  const total = votes.reduce((sum, vote) => sum + vote, 0);
+
+  const submitVote = () => {
+    if (selected === null || submitted) return;
+    setVotes((current) => current.map((vote, index) => index === selected ? vote + 1 : vote));
+    setSubmitted(true);
+  };
+
+  return (
+    <div className="poll-widget">
+      <div className="poll-question"><span>Q</span><strong>{settings.question || "투표 질문을 입력하세요."}</strong></div>
+      <div className={`poll-options ${submitted ? "show-results" : ""}`}>
+        {options.map((option, index) => {
+          const percentage = Math.round((votes[index] / total) * 100);
+          return (
+            <button key={`${index}-${option}`} className={selected === index ? "selected" : ""} onClick={() => !submitted && setSelected(index)} aria-pressed={selected === index}>
+              <i style={{ "--vote-width": `${percentage}%` } as CSSProperties} />
+              <span className="poll-radio" />
+              <b>{option}</b>
+              <em>{submitted ? `${percentage}%` : `${votes[index]}명`}</em>
+            </button>
+          );
+        })}
+      </div>
+      <div className="poll-footer">
+        <span>총 {total}명 참여 · 익명 투표</span>
+        {submitted
+          ? <button className="poll-reset" onClick={() => { setSubmitted(false); setSelected(null); }}>다시 선택</button>
+          : <button className="poll-submit" disabled={selected === null} onClick={submitVote}>투표하기</button>}
+      </div>
+    </div>
+  );
+}
+
 function WidgetContent({ widget }: { widget: Widget }) {
   const value = widget.settings.value ?? "";
   const caption = widget.settings.caption ?? "";
@@ -316,6 +358,8 @@ function WidgetContent({ widget }: { widget: Widget }) {
       return <LiveFeed />;
     case "assign":
       return <AssignmentPreview />;
+    case "poll":
+      return <PollPreview settings={widget.settings} />;
     default:
       return null;
   }
@@ -331,6 +375,7 @@ function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { w
       {widget.type === "hero" && <><label>라벨<input value={widget.settings.eyebrow ?? ""} onChange={(event) => onChange({}, { eyebrow: event.target.value })} /></label><label>설명<textarea value={widget.settings.subtitle ?? ""} onChange={(event) => onChange({}, { subtitle: event.target.value })} /></label></>}
       {widget.type === "text" && <label>본문<textarea value={widget.settings.body ?? ""} onChange={(event) => onChange({}, { body: event.target.value })} /></label>}
       {widget.type === "button" && <label>버튼 문구<input value={widget.settings.label ?? ""} onChange={(event) => onChange({}, { label: event.target.value })} /></label>}
+      {widget.type === "poll" && <><label>투표 질문<textarea value={widget.settings.question ?? ""} onChange={(event) => onChange({}, { question: event.target.value })} /></label><label>선택지 1<input value={widget.settings.option1 ?? ""} onChange={(event) => onChange({}, { option1: event.target.value })} /></label><label>선택지 2<input value={widget.settings.option2 ?? ""} onChange={(event) => onChange({}, { option2: event.target.value })} /></label><label>선택지 3<input value={widget.settings.option3 ?? ""} onChange={(event) => onChange({}, { option3: event.target.value })} /></label></>}
       {hasValue && <label>표시 값<input value={widget.settings.value ?? ""} onChange={(event) => onChange({}, { value: event.target.value })} /></label>}
       {hasCaption && <label>보조 설명<input value={widget.settings.caption ?? ""} onChange={(event) => onChange({}, { caption: event.target.value })} /></label>}
       <label>가로 크기<div className="width-buttons">{(["third", "half", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
