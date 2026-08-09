@@ -61,6 +61,11 @@ type SavedLayout = {
   themeId: string;
 };
 
+type DropTarget = {
+  targetId: string;
+  position: "before" | "after";
+};
+
 const THEMES: Theme[] = [
   { id: "violet-night", name: "Violet Night", mode: "dark", bg: "#14151b", sidebar: "#191a21", panel: "#202128", surface: "#272830", elevated: "#30313b", line: "#393a45", text: "#f5f3ff", muted: "#9b9aa8", accent: "#a970ff", accent2: "#28c9d8", positive: "#45d394" },
   { id: "ocean-dark", name: "Ocean Dark", mode: "dark", bg: "#07151d", sidebar: "#0a1b25", panel: "#102630", surface: "#16323d", elevated: "#1d404b", line: "#28505b", text: "#edfaff", muted: "#89aab5", accent: "#23b5d3", accent2: "#6ae4b9", positive: "#52d6a3" },
@@ -345,7 +350,11 @@ export default function Home() {
   const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>([]);
   const [preview, setPreview] = useState(false);
   const [toast, setToast] = useState("");
+  const [draggingWidgetId, setDraggingWidgetId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const hydrated = useRef(false);
+  const pointerDrag = useRef<{ id: string; pointerId: number } | null>(null);
+  const dropTargetRef = useRef<DropTarget | null>(null);
 
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
   const theme = THEMES.find((item) => item.id === themeId) ?? THEMES[0];
@@ -408,17 +417,83 @@ export default function Home() {
     setToast(`${LABELS[type]}을(를) 추가했습니다.`);
   };
 
-  const moveWidget = (draggedId: string, targetId: string) => {
+  const moveWidget = (draggedId: string, targetId: string, position: "before" | "after" = "before") => {
     if (draggedId === targetId) return;
     updateActivePage((page) => {
       const from = page.widgets.findIndex((widget) => widget.id === draggedId);
-      const to = page.widgets.findIndex((widget) => widget.id === targetId);
-      if (from < 0 || to < 0) return page;
+      if (from < 0) return page;
       const widgets = [...page.widgets];
       const [moved] = widgets.splice(from, 1);
-      widgets.splice(to, 0, moved);
+      if (targetId === "__end__") {
+        widgets.push(moved);
+        return { ...page, widgets };
+      }
+      const to = widgets.findIndex((widget) => widget.id === targetId);
+      if (to < 0) return page;
+      widgets.splice(to + (position === "after" ? 1 : 0), 0, moved);
       return { ...page, widgets };
     });
+  };
+
+  const updateDropTarget = (next: DropTarget | null) => {
+    dropTargetRef.current = next;
+    setDropTarget((current) => current?.targetId === next?.targetId && current?.position === next?.position ? current : next);
+  };
+
+  const startPointerReorder = (event: React.PointerEvent<HTMLButtonElement>, widgetId: string) => {
+    if (preview || event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    pointerDrag.current = { id: widgetId, pointerId: event.pointerId };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDraggingWidgetId(widgetId);
+    setSelectedWidgetId(null);
+    updateDropTarget(null);
+  };
+
+  const trackPointerReorder = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const active = pointerDrag.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const underPointer = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+    const targetCard = underPointer?.closest<HTMLElement>("[data-widget-id]");
+    if (targetCard) {
+      const targetId = targetCard.dataset.widgetId;
+      if (!targetId || targetId === active.id) {
+        updateDropTarget(null);
+        return;
+      }
+      const rect = targetCard.getBoundingClientRect();
+      const sameVisualRow = event.clientY > rect.top + rect.height * .2 && event.clientY < rect.bottom - rect.height * .2;
+      const position = sameVisualRow
+        ? (event.clientX < rect.left + rect.width / 2 ? "before" : "after")
+        : (event.clientY < rect.top + rect.height / 2 ? "before" : "after");
+      updateDropTarget({ targetId, position });
+      return;
+    }
+    if (underPointer?.closest(".canvas-grid")) updateDropTarget({ targetId: "__end__", position: "after" });
+    else updateDropTarget(null);
+  };
+
+  const finishPointerReorder = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const active = pointerDrag.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    const destination = dropTargetRef.current;
+    if (destination) {
+      moveWidget(active.id, destination.targetId, destination.position);
+      setToast("요소 위치를 변경했습니다.");
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pointerDrag.current = null;
+    setDraggingWidgetId(null);
+    updateDropTarget(null);
+  };
+
+  const cancelPointerReorder = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pointerDrag.current = null;
+    setDraggingWidgetId(null);
+    updateDropTarget(null);
   };
 
   const updateWidget = (id: string, patch: Partial<Widget>, settings?: Record<string, string>) => {
@@ -459,7 +534,7 @@ export default function Home() {
   };
 
   return (
-    <main className={`layout-app ${preview ? "preview-mode" : ""}`} style={themeStyle} data-mode={theme.mode}>
+    <main className={`layout-app ${preview ? "preview-mode" : ""} ${draggingWidgetId ? "reordering" : ""}`} style={themeStyle} data-mode={theme.mode}>
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><i /><i /><i /></span><strong>Layout Lab</strong><em>WORKSPACE BUILDER</em></div>
         <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> 레이아웃 편집</span><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
@@ -507,21 +582,20 @@ export default function Home() {
               {activePage.widgets.length === 0 && <div className="empty-canvas"><span>＋</span><h3>첫 요소를 배치해 보세요</h3><p>왼쪽 도구 상자에서 요소를 끌어오거나 클릭하면 이곳에 추가됩니다.</p></div>}
               {activePage.widgets.map((widget) => (
                 <article
-                  className={`canvas-widget width-${widget.width} ${selectedWidgetId === widget.id ? "selected" : ""}`}
+                  className={`canvas-widget width-${widget.width} ${selectedWidgetId === widget.id ? "selected" : ""} ${draggingWidgetId === widget.id ? "is-dragging" : ""} ${dropTarget?.targetId === widget.id ? `drop-${dropTarget.position}` : ""}`}
                   key={widget.id}
-                  draggable={!preview}
-                  onDragStart={(event) => { event.dataTransfer.setData("widget/id", widget.id); event.dataTransfer.effectAllowed = "move"; }}
-                  onDragOver={(event) => { if (!preview) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = "move"; } }}
-                  onDrop={(event) => { if (preview) return; event.preventDefault(); event.stopPropagation(); const draggedId = event.dataTransfer.getData("widget/id"); const type = event.dataTransfer.getData("widget/type") as WidgetType; if (draggedId) moveWidget(draggedId, widget.id); else if (type) addWidget(type); }}
+                  data-widget-id={widget.id}
+                  onDragOver={(event) => { if (!preview) { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = "copy"; } }}
+                  onDrop={(event) => { if (preview) return; event.preventDefault(); event.stopPropagation(); const type = event.dataTransfer.getData("widget/type") as WidgetType; if (type) addWidget(type); }}
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="widget-head"><div><span className="widget-grip">⠿</span><div><h3>{widget.title}</h3>{widget.settings.caption && !["stat", "status", "progress", "profile", "donut", "gauge"].includes(widget.type) && <p>{widget.settings.caption}</p>}</div></div>{!preview && <button className={`settings-trigger ${selectedWidgetId === widget.id ? "active" : ""}`} onClick={() => setSelectedWidgetId((current) => current === widget.id ? null : widget.id)} aria-label={`${widget.title} 설정`}>⚙</button>}</div>
+                  <div className="widget-head"><div>{!preview && <button type="button" className="widget-grip" title="누른 채 이동" aria-label={`${widget.title} 위치 이동`} onPointerDown={(event) => startPointerReorder(event, widget.id)} onPointerMove={trackPointerReorder} onPointerUp={finishPointerReorder} onPointerCancel={cancelPointerReorder}>⠿</button>}<div><h3>{widget.title}</h3>{widget.settings.caption && !["stat", "status", "progress", "profile", "donut", "gauge"].includes(widget.type) && <p>{widget.settings.caption}</p>}</div></div>{!preview && <button className={`settings-trigger ${selectedWidgetId === widget.id ? "active" : ""}`} onClick={() => setSelectedWidgetId((current) => current === widget.id ? null : widget.id)} aria-label={`${widget.title} 설정`}>⚙</button>}</div>
                   <WidgetContent widget={widget} />
                   {!preview && <div className="widget-drag-label">DRAG TO REORDER</div>}
                   {selectedWidgetId === widget.id && !preview && <SettingsPanel widget={widget} onClose={() => setSelectedWidgetId(null)} onChange={(patch, settings) => updateWidget(widget.id, patch, settings)} onDelete={() => { updateActivePage((page) => ({ ...page, widgets: page.widgets.filter((item) => item.id !== widget.id) })); setSelectedWidgetId(null); }} onDuplicate={() => { const copy = { ...widget, id: newId("widget"), title: `${widget.title} 복사본` }; updateActivePage((page) => ({ ...page, widgets: [...page.widgets, copy] })); setSelectedWidgetId(copy.id); }} />}
                 </article>
               ))}
-              {!preview && activePage.widgets.length > 0 && <div className="drop-more"><span>＋</span> 여기에 요소 놓기</div>}
+              {!preview && activePage.widgets.length > 0 && <div className={`drop-more ${dropTarget?.targetId === "__end__" ? "active" : ""}`}><span>＋</span> {draggingWidgetId ? "이곳에 놓아 마지막으로 이동" : "여기에 요소 놓기"}</div>}
             </div>
           </div>
         </section>

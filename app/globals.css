@@ -578,10 +578,35 @@ select:focus-visible,
   justify-content: space-between;
 }
 
-.widget-head > div { min-width: 0; display: flex; align-items: flex-start; gap: 6px; }
+.widget-head > div { min-width: 0; display: flex; align-items: flex-start; gap: 8px; }
 .widget-head h3 { margin: 0; font-size: 12px; font-weight: 680; letter-spacing: -.1px; }
 .widget-head p { margin: 3px 0 0; color: var(--muted); font-size: 8px; }
-.widget-grip { display: none; color: var(--muted); cursor: grab; }
+.widget-grip {
+  width: 23px;
+  height: 23px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  margin-top: -2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  font-size: 13px;
+  touch-action: none;
+  user-select: none;
+  transition: color .15s, border-color .15s, background .15s;
+}
+
+.widget-grip:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+}
+
+.widget-grip:active { cursor: grabbing; }
 
 .settings-trigger {
   width: 27px;
@@ -620,6 +645,24 @@ select:focus-visible,
 }
 
 .canvas-widget:hover .widget-drag-label { opacity: 1; }
+
+.reordering,
+.reordering * { cursor: grabbing !important; user-select: none !important; }
+
+.canvas-widget.is-dragging {
+  opacity: .38;
+  transform: scale(.985);
+  border-style: dashed;
+}
+
+.canvas-widget.drop-before,
+.canvas-widget.drop-after {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent));
+}
+
+.canvas-widget.drop-before { box-shadow: inset 0 3px var(--accent), 0 8px 24px color-mix(in srgb, var(--accent) 14%, transparent); }
+.canvas-widget.drop-after { box-shadow: inset 0 -3px var(--accent), 0 8px 24px color-mix(in srgb, var(--accent) 14%, transparent); }
 
 .settings-panel {
   position: absolute;
@@ -683,6 +726,7 @@ select:focus-visible,
   font-size: 9px;
 }
 .drop-more span { color: var(--accent); font-size: 15px; }
+.drop-more.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel)); color: var(--text); }
 
 .hero-widget {
   min-height: 145px;
@@ -869,7 +913,6 @@ select:focus-visible,
 .preview-mode .canvas-meta,
 .preview-mode .canvas-kicker,
 .preview-mode .page-title-row > span,
-.preview-mode .widget-grip,
 .preview-mode .drop-more { display: none; }
 .preview-mode .topbar-context { padding-left: 26px; }
 .preview-mode .workspace-name input { width: 330px; font-size: 15px; }
