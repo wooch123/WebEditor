@@ -604,6 +604,7 @@ select:focus-visible,
 .widget-head > div { min-width: 0; display: flex; align-items: flex-start; gap: 8px; }
 .widget-head h3 { margin: 0; font-size: 12px; font-weight: 680; letter-spacing: -.1px; }
 .widget-head p { margin: 3px 0 0; color: var(--muted); font-size: 8px; }
+.widget-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
 .widget-grip {
   width: 23px;
   height: 23px;
@@ -649,6 +650,27 @@ select:focus-visible,
 
 .canvas-widget:hover .settings-trigger,
 .settings-trigger.active { opacity: 1; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+
+.delete-trigger {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .7;
+  transition: opacity .15s, color .15s, border-color .15s, background .15s;
+}
+
+.canvas-widget:hover .delete-trigger { opacity: 1; }
+.delete-trigger:hover { color: #ff7185; border-color: color-mix(in srgb, #ff7185 55%, var(--line)); background: color-mix(in srgb, #ff7185 9%, var(--panel)); }
 
 .widget-drag-label {
   position: absolute;

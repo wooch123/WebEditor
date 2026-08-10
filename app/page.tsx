@@ -655,6 +655,12 @@ export default function Home() {
     updateActivePage((page) => ({ ...page, widgets: page.widgets.map((widget) => widget.id === id ? { ...widget, ...patch, settings: { ...widget.settings, ...settings } } : widget) }));
   };
 
+  const deleteWidget = (id: string, title: string) => {
+    updateActivePage((page) => ({ ...page, widgets: page.widgets.filter((widget) => widget.id !== id) }));
+    if (selectedWidgetId === id) setSelectedWidgetId(null);
+    setToast(`‘${title}’ 요소를 삭제했습니다.`);
+  };
+
   const saveLayout = () => {
     const name = workspaceName.trim();
     if (!name) { setToast("저장할 레이아웃 이름을 입력해 주세요."); return; }
@@ -749,10 +755,10 @@ export default function Home() {
                   onDrop={(event) => { if (preview) return; event.preventDefault(); event.stopPropagation(); const type = event.dataTransfer.getData("widget/type") as WidgetType; if (type) addWidget(type); }}
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div className="widget-head"><div>{!preview && <button type="button" className="widget-grip" title="누른 채 이동" aria-label={`${widget.title} 위치 이동`} onPointerDown={(event) => startPointerReorder(event, widget.id)} onPointerMove={trackPointerReorder} onPointerUp={finishPointerReorder} onPointerCancel={cancelPointerReorder}>⠿</button>}<div><h3>{widget.title}</h3>{widget.settings.caption && !["stat", "status", "progress", "profile", "donut", "gauge"].includes(widget.type) && <p>{widget.settings.caption}</p>}</div></div>{!preview && <button className={`settings-trigger ${selectedWidgetId === widget.id ? "active" : ""}`} onClick={() => setSelectedWidgetId((current) => current === widget.id ? null : widget.id)} aria-label={`${widget.title} 설정`}>⚙</button>}</div>
+                  <div className="widget-head"><div>{!preview && <button type="button" className="widget-grip" title="누른 채 이동" aria-label={`${widget.title} 위치 이동`} onPointerDown={(event) => startPointerReorder(event, widget.id)} onPointerMove={trackPointerReorder} onPointerUp={finishPointerReorder} onPointerCancel={cancelPointerReorder}>⠿</button>}<div><h3>{widget.title}</h3>{widget.settings.caption && !["stat", "status", "progress", "profile", "donut", "gauge"].includes(widget.type) && <p>{widget.settings.caption}</p>}</div></div>{!preview && <div className="widget-actions"><button className={`settings-trigger ${selectedWidgetId === widget.id ? "active" : ""}`} onClick={() => setSelectedWidgetId((current) => current === widget.id ? null : widget.id)} aria-label={`${widget.title} 설정`} title="요소 설정">⚙</button><button className="delete-trigger" onClick={() => deleteWidget(widget.id, widget.title)} aria-label={`${widget.title} 삭제`} title="요소 삭제">×</button></div>}</div>
                   <div className="widget-content"><WidgetContent widget={widget} /></div>
                   {!preview && <div className="widget-drag-label">DRAG TO REORDER</div>}
-                  {selectedWidgetId === widget.id && !preview && <SettingsPanel widget={widget} onClose={() => setSelectedWidgetId(null)} onChange={(patch, settings) => updateWidget(widget.id, patch, settings)} onDelete={() => { updateActivePage((page) => ({ ...page, widgets: page.widgets.filter((item) => item.id !== widget.id) })); setSelectedWidgetId(null); }} onDuplicate={() => { const copy = { ...widget, id: newId("widget"), title: `${widget.title} 복사본` }; updateActivePage((page) => ({ ...page, widgets: [...page.widgets, copy] })); setSelectedWidgetId(copy.id); }} />}
+                  {selectedWidgetId === widget.id && !preview && <SettingsPanel widget={widget} onClose={() => setSelectedWidgetId(null)} onChange={(patch, settings) => updateWidget(widget.id, patch, settings)} onDelete={() => deleteWidget(widget.id, widget.title)} onDuplicate={() => { const copy = { ...widget, id: newId("widget"), title: `${widget.title} 복사본` }; updateActivePage((page) => ({ ...page, widgets: [...page.widgets, copy] })); setSelectedWidgetId(copy.id); }} />}
                 </article>
               ))}
               {!preview && activePage.widgets.length > 0 && <div className={`drop-more ${dropTarget?.targetId === "__end__" ? "active" : ""}`}><span>＋</span> {draggingWidgetId ? "이곳에 놓아 마지막으로 이동" : "여기에 요소 놓기"}</div>}
