@@ -5,6 +5,7 @@ $node = 'C:\Users\wooch\.cache\codex-runtimes\codex-primary-runtime\dependencies
 $vinext = Join-Path $root 'node_modules\vinext\dist\cli.js'
 $logDir = Join-Path $root 'logs'
 $logPath = Join-Path $logDir 'web-server.log'
+$errorLogPath = Join-Path $logDir 'web-server-error.log'
 $restartDelaySeconds = 3
 
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
@@ -24,12 +25,15 @@ while ($true) {
     "[$(Get-Date -Format o)] Starting Layout Lab on http://127.0.0.1:3210" |
         Out-File -LiteralPath $logPath -Append -Encoding utf8
 
-    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        $previousErrorActionPreference = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'
-        & $node $vinext start --hostname 127.0.0.1 --port 3210 2>&1 |
-            Out-File -LiteralPath $logPath -Append -Encoding utf8
+        & $node $vinext start --hostname 127.0.0.1 --port 3210 1>> $logPath 2>> $errorLogPath
         $exitCode = $LASTEXITCODE
+    }
+    catch {
+        $_ | Out-String | Out-File -LiteralPath $errorLogPath -Append -Encoding utf8
+        $exitCode = 1
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
