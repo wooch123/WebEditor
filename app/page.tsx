@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 
 type WidgetType =
   | "hero"
@@ -29,7 +29,8 @@ type WidgetType =
   | "assign"
   | "poll"
   | "customTable"
-  | "kanban";
+  | "kanban"
+  | "gantt";
 
 type WidgetWidth = "third" | "half" | "full";
 
@@ -148,6 +149,7 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
     { type: "poll", label: "투표", icon: "V", description: "선택과 결과 집계" },
     { type: "customTable", label: "커스텀 테이블", icon: "▦", description: "입력 열과 행 구성" },
     { type: "kanban", label: "칸반 보드", icon: "K", description: "단계별 업무 흐름" },
+    { type: "gantt", label: "간트차트", icon: "G", description: "일정과 기간 관리" },
   ]},
 ];
 
@@ -162,7 +164,7 @@ function newId(prefix: string) {
 }
 
 function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
-  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "board", "editor", "live", "customTable", "kanban"];
+  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "board", "editor", "live", "customTable", "kanban", "gantt"];
   const defaults: Partial<Record<WidgetType, Record<string, string>>> = {
     hero: { subtitle: "팀의 핵심 업무와 현황을 한눈에 확인하세요.", eyebrow: "WORKSPACE" },
     text: { body: "팀이 함께 확인해야 할 안내와 설명을 입력하세요." },
@@ -191,6 +193,7 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     poll: { caption: "현재 36명 참여", question: "다음 팀 워크숍은 언제가 좋을까요?", option1: "8월 21일 금요일", option2: "8월 28일 금요일", option3: "9월 4일 금요일" },
     customTable: { caption: "열을 끌어 순서를 바꾸고 행을 추가하세요.", comboOptions: "대기,진행,검토,완료", comboDefault: "진행", radioOptions: "일반,높음", radioDefault: "일반", textDefault: "새 업무" },
     kanban: { caption: "카드를 끌어 단계별로 이동하세요." },
+    gantt: { caption: "업무 막대를 끌어 일정을 이동하고 기간을 조절하세요." },
   };
   return {
     id: newId("widget"),
@@ -610,6 +613,143 @@ function KanbanPreview() {
   );
 }
 
+type GanttTask = { id: string; name: string; assignee: string; start: number; duration: number; progress: number; tone: number };
+type GanttInteraction = { id: string; mode: "move" | "resize"; startX: number; start: number; duration: number; dayWidth: number };
+
+function GanttPreview() {
+  const [range, setRange] = useState<"week" | "month">("month");
+  const [tasks, setTasks] = useState<GanttTask[]>([
+    { id: "gantt-1", name: "요구사항 및 범위 확정", assignee: "JW", start: 1, duration: 5, progress: 100, tone: 0 },
+    { id: "gantt-2", name: "화면 설계와 디자인", assignee: "SY", start: 4, duration: 8, progress: 75, tone: 1 },
+    { id: "gantt-3", name: "핵심 기능 개발", assignee: "MK", start: 10, duration: 12, progress: 50, tone: 2 },
+    { id: "gantt-4", name: "검수 및 배포", assignee: "JH", start: 21, duration: 7, progress: 25, tone: 3 },
+  ]);
+  const interaction = useRef<GanttInteraction | null>(null);
+  const totalDays = range === "week" ? 14 : 30;
+  const days = Array.from({ length: totalDays }, (_, index) => index + 1);
+
+  const clampTasksToRange = (nextTotal: number) => {
+    setTasks((current) => current.map((task) => {
+      const duration = Math.min(task.duration, nextTotal);
+      return { ...task, duration, start: Math.min(task.start, nextTotal - duration) };
+    }));
+  };
+
+  const changeRange = (nextRange: "week" | "month") => {
+    const nextTotal = nextRange === "week" ? 14 : 30;
+    setRange(nextRange);
+    clampTasksToRange(nextTotal);
+  };
+
+  const adjustTask = (id: string, patch: Partial<GanttTask>) => {
+    setTasks((current) => current.map((task) => task.id === id ? { ...task, ...patch } : task));
+  };
+
+  const startInteraction = (event: ReactPointerEvent<HTMLElement>, task: GanttTask, mode: "move" | "resize") => {
+    event.preventDefault();
+    event.stopPropagation();
+    const track = event.currentTarget.closest(".gantt-row-track");
+    if (!track) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    interaction.current = { id: task.id, mode, startX: event.clientX, start: task.start, duration: task.duration, dayWidth: track.getBoundingClientRect().width / totalDays };
+  };
+
+  const trackInteraction = (event: ReactPointerEvent<HTMLElement>) => {
+    const active = interaction.current;
+    if (!active || active.dayWidth <= 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const delta = Math.round((event.clientX - active.startX) / active.dayWidth);
+    setTasks((current) => current.map((task) => {
+      if (task.id !== active.id) return task;
+      if (active.mode === "move") return { ...task, start: Math.max(0, Math.min(totalDays - active.duration, active.start + delta)) };
+      return { ...task, duration: Math.max(1, Math.min(totalDays - active.start, active.duration + delta)) };
+    }));
+  };
+
+  const finishInteraction = (event: ReactPointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+    interaction.current = null;
+  };
+
+  const moveWithKeyboard = (task: GanttTask, delta: number) => {
+    adjustTask(task.id, { start: Math.max(0, Math.min(totalDays - task.duration, task.start + delta)) });
+  };
+
+  const resizeWithKeyboard = (task: GanttTask, delta: number) => {
+    adjustTask(task.id, { duration: Math.max(1, Math.min(totalDays - task.start, task.duration + delta)) });
+  };
+
+  const addTask = () => {
+    const index = tasks.length;
+    const duration = Math.min(6, totalDays);
+    const start = Math.min((index * 3) % totalDays, totalDays - duration);
+    setTasks((current) => [...current, { id: newId("gantt"), name: `새 업무 ${index + 1}`, assignee: "ME", start, duration, progress: 0, tone: index % 4 }]);
+  };
+
+  return (
+    <div className="gantt-board" aria-label="인터랙티브 업무 간트차트" onPointerDown={(event) => event.stopPropagation()}>
+      <div className="gantt-toolbar">
+        <div className="gantt-summary"><strong>{tasks.length}개 업무</strong><span>8월 프로젝트 일정</span></div>
+        <div className="gantt-actions">
+          <div className="gantt-range" aria-label="간트차트 표시 기간">
+            <button className={range === "week" ? "active" : ""} onClick={() => changeRange("week")}>주간</button>
+            <button className={range === "month" ? "active" : ""} onClick={() => changeRange("month")}>월간</button>
+          </div>
+          <button className="gantt-add" onClick={addTask}>＋ 업무 추가</button>
+        </div>
+      </div>
+      <div className="gantt-scroll">
+        <div className={`gantt-matrix range-${range}`}>
+          <div className="gantt-header">
+            <span>업무 · 담당자</span>
+            <div className="gantt-days" style={{ gridTemplateColumns: `repeat(${totalDays}, minmax(18px, 1fr))` }}>
+              {days.map((day) => <b key={day} className={(day - 1) % 7 > 4 ? "weekend" : ""}>{day}</b>)}
+            </div>
+          </div>
+          {tasks.map((task) => (
+            <div className="gantt-row" key={task.id}>
+              <div className="gantt-task-meta">
+                <span className={`gantt-avatar tone-${task.tone}`}>{task.assignee}</span>
+                <div><strong>{task.name}</strong><button onClick={() => adjustTask(task.id, { progress: (task.progress + 25) % 125 })} title="클릭하여 진행률 변경">{task.progress}% 완료</button></div>
+              </div>
+              <div className="gantt-row-track" style={{ gridTemplateColumns: `repeat(${totalDays}, minmax(18px, 1fr))` }}>
+                {days.map((day) => <i key={day} className={`gantt-grid-day ${(day - 1) % 7 > 4 ? "weekend" : ""}`} style={{ gridColumn: day }} />)}
+                <div
+                  className={`gantt-bar tone-${task.tone}`}
+                  style={{ gridColumn: `${task.start + 1} / span ${task.duration}` }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${task.name}, ${task.start + 1}일부터 ${task.duration}일간. 좌우 방향키로 이동`}
+                  onPointerDown={(event) => startInteraction(event, task, "move")}
+                  onPointerMove={trackInteraction}
+                  onPointerUp={finishInteraction}
+                  onPointerCancel={finishInteraction}
+                  onKeyDown={(event) => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); moveWithKeyboard(task, event.key === "ArrowLeft" ? -1 : 1); } }}
+                >
+                  <span style={{ width: `${task.progress}%` }} />
+                  <b>{task.progress}%</b>
+                  <button
+                    className="gantt-resizer"
+                    aria-label={`${task.name} 기간 조절. 좌우 방향키 사용`}
+                    title="좌우로 끌어 기간 조절"
+                    onPointerDown={(event) => startInteraction(event, task, "resize")}
+                    onPointerMove={trackInteraction}
+                    onPointerUp={finishInteraction}
+                    onPointerCancel={finishInteraction}
+                    onKeyDown={(event) => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); event.stopPropagation(); resizeWithKeyboard(task, event.key === "ArrowLeft" ? -1 : 1); } }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="gantt-legend"><span><i /> 완료 구간</span><span>막대 이동 · 끝점으로 기간 조절</span></div>
+    </div>
+  );
+}
+
 function WidgetContent({ widget }: { widget: Widget }) {
   const value = widget.settings.value ?? "";
   const caption = widget.settings.caption ?? "";
@@ -666,6 +806,8 @@ function WidgetContent({ widget }: { widget: Widget }) {
       return <CustomTablePreview key={`${widget.id}-${widget.settings.comboOptions}-${widget.settings.comboDefault}-${widget.settings.radioOptions}-${widget.settings.radioDefault}`} settings={widget.settings} />;
     case "kanban":
       return <KanbanPreview />;
+    case "gantt":
+      return <GanttPreview />;
     default:
       return null;
   }
