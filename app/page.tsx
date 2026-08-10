@@ -13,6 +13,14 @@ type WidgetType =
   | "profile"
   | "trend"
   | "bar"
+  | "line"
+  | "area"
+  | "stackedBar"
+  | "pie"
+  | "scatter"
+  | "radar"
+  | "heatmap"
+  | "funnel"
   | "donut"
   | "gauge"
   | "board"
@@ -20,6 +28,7 @@ type WidgetType =
   | "live"
   | "assign"
   | "poll"
+  | "customTable"
   | "kanban";
 
 type WidgetWidth = "third" | "half" | "full";
@@ -120,6 +129,14 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
   { category: "인터랙티브 차트", items: [
     { type: "trend", label: "추세 차트", icon: "⌁", description: "기간별 추이" },
     { type: "bar", label: "막대 차트", icon: "▥", description: "항목별 비교" },
+    { type: "line", label: "선 차트", icon: "╱", description: "연속 변화 비교" },
+    { type: "area", label: "영역 차트", icon: "◿", description: "누적 규모 추이" },
+    { type: "stackedBar", label: "누적 막대", icon: "▤", description: "구성 항목 비교" },
+    { type: "pie", label: "원형 차트", icon: "◕", description: "전체 대비 비중" },
+    { type: "scatter", label: "산점도", icon: "∴", description: "상관관계 분석" },
+    { type: "radar", label: "레이더 차트", icon: "◇", description: "다차원 역량 비교" },
+    { type: "heatmap", label: "히트맵", icon: "▦", description: "밀도와 패턴 탐색" },
+    { type: "funnel", label: "퍼널 차트", icon: "▽", description: "단계별 전환 분석" },
     { type: "donut", label: "도넛 차트", icon: "◉", description: "비중 분석" },
     { type: "gauge", label: "게이지", icon: "◔", description: "달성 현황" },
   ]},
@@ -129,6 +146,7 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
     { type: "live", label: "실시간 피드", icon: "L", description: "자동 갱신 카드" },
     { type: "assign", label: "담당자 배정", icon: "A", description: "사람과 업무 연결" },
     { type: "poll", label: "투표", icon: "V", description: "선택과 결과 집계" },
+    { type: "customTable", label: "커스텀 테이블", icon: "▦", description: "입력 열과 행 구성" },
     { type: "kanban", label: "칸반 보드", icon: "K", description: "단계별 업무 흐름" },
   ]},
 ];
@@ -144,7 +162,7 @@ function newId(prefix: string) {
 }
 
 function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
-  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "board", "editor", "live", "kanban"];
+  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "board", "editor", "live", "customTable", "kanban"];
   const defaults: Partial<Record<WidgetType, Record<string, string>>> = {
     hero: { subtitle: "팀의 핵심 업무와 현황을 한눈에 확인하세요.", eyebrow: "WORKSPACE" },
     text: { body: "팀이 함께 확인해야 할 안내와 설명을 입력하세요." },
@@ -156,6 +174,14 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     profile: { value: "김민준", caption: "프로젝트 오너" },
     trend: { caption: "최근 7일 처리량" },
     bar: { caption: "팀별 완료 업무" },
+    line: { caption: "월별 매출 변화" },
+    area: { caption: "기간별 누적 사용자" },
+    stackedBar: { caption: "채널별 실적 구성" },
+    pie: { caption: "부서별 업무 비중" },
+    scatter: { caption: "비용 대비 전환 상관관계" },
+    radar: { caption: "팀 역량 비교" },
+    heatmap: { caption: "시간대별 활동 밀도" },
+    funnel: { caption: "고객 전환 단계" },
     donut: { value: "74", caption: "완료 비율" },
     gauge: { value: "82", caption: "서비스 목표" },
     board: { caption: "팀 전체 업무" },
@@ -163,6 +189,7 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     live: { caption: "팀 활동을 실시간으로 확인합니다." },
     assign: { caption: "업무 담당자와 마감일" },
     poll: { caption: "현재 36명 참여", question: "다음 팀 워크숍은 언제가 좋을까요?", option1: "8월 21일 금요일", option2: "8월 28일 금요일", option3: "9월 4일 금요일" },
+    customTable: { caption: "열을 끌어 순서를 바꾸고 행을 추가하세요.", comboDefault: "진행", textDefault: "새 업무" },
     kanban: { caption: "카드를 끌어 단계별로 이동하세요." },
   };
   return {
@@ -231,6 +258,176 @@ function MiniChart({ variant }: { variant: "trend" | "bar" }) {
         </div>
       </div>
       <div className="chart-axis"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    </div>
+  );
+}
+
+function LineAreaChart({ variant }: { variant: "line" | "area" }) {
+  const [range, setRange] = useState("6개월");
+  const data = range === "1년" ? [34, 43, 39, 55, 49, 64, 58, 73, 69, 82, 77, 91] : range === "30일" ? [48, 56, 44, 62, 68, 59, 76, 84] : [38, 52, 47, 65, 58, 74, 69, 86];
+  const width = 100 / (data.length - 1);
+  const areaShape = `polygon(0 100%, ${data.map((value, index) => `${index * width}% ${100 - value}%`).join(", ")}, 100% 100%)`;
+  return (
+    <div className={`advanced-chart line-area-chart ${variant}`}>
+      <div className="advanced-chart-head"><div><strong>{variant === "line" ? "₩128.4M" : "48,920"}</strong><span>{variant === "line" ? "매출" : "활성 사용자"} · +16.8%</span></div><div className="segment-control">{["30일", "6개월", "1년"].map((item) => <button key={item} className={range === item ? "active" : ""} onClick={() => setRange(item)}>{item}</button>)}</div></div>
+      <div className="line-plot">
+        <div className="chart-grid-lines"><i /><i /><i /><i /></div>
+        {variant === "area" && <i className="area-fill" style={{ clipPath: areaShape }} />}
+        {data.slice(0, -1).map((value, index) => {
+          const angle = -Math.atan2((data[index + 1] - value) * 1.15, width) * 180 / Math.PI;
+          return <i className="line-segment" key={index} style={{ left: `${index * width}%`, bottom: `${value}%`, width: `${width}%`, transform: `rotate(${angle}deg)` }} />;
+        })}
+        {data.map((value, index) => <button className="line-point" key={`${range}-${index}`} style={{ left: `${index * width}%`, bottom: `${value}%` }} aria-label={`${index + 1}번째 데이터 ${value * 160}`}><span>{(value * 160).toLocaleString()}</span></button>)}
+      </div>
+      <div className="compact-axis"><span>1월</span><span>3월</span><span>5월</span><span>7월</span><span>9월</span><span>11월</span></div>
+    </div>
+  );
+}
+
+function StackedBarChart() {
+  const [mode, setMode] = useState("실적");
+  const [visible, setVisible] = useState([true, true, true]);
+  const values = mode === "목표" ? [[36, 28, 22], [42, 25, 24], [38, 34, 20], [46, 31, 18], [49, 33, 17], [54, 29, 20]] : [[28, 24, 18], [36, 21, 19], [31, 29, 16], [42, 25, 14], [45, 28, 16], [51, 24, 18]];
+  const labels = ["직접", "검색", "추천"];
+  return (
+    <div className="advanced-chart stacked-chart">
+      <div className="advanced-chart-head"><div><strong>₩96.2M</strong><span>채널별 기여도</span></div><div className="segment-control">{["실적", "목표"].map((item) => <button key={item} className={mode === item ? "active" : ""} onClick={() => setMode(item)}>{item}</button>)}</div></div>
+      <div className="stacked-plot"><div className="chart-grid-lines"><i /><i /><i /><i /></div>{values.map((parts, index) => { const total = parts.reduce((sum, value, partIndex) => sum + (visible[partIndex] ? value : 0), 0); return <button className="stack-column" key={`${mode}-${index}`} style={{ height: `${Math.max(total, 6)}%` }} aria-label={`${index + 1}월 합계 ${total}`}><span className="chart-tooltip">{total}M</span>{parts.map((value, partIndex) => visible[partIndex] && <i key={partIndex} className={`stack-part part-${partIndex}`} style={{ flexGrow: value }} />)}</button>; })}</div>
+      <div className="chart-legend">{labels.map((label, index) => <button key={label} className={visible[index] ? "active" : ""} onClick={() => setVisible((current) => current.map((value, i) => i === index ? !value : value))}><i className={`part-${index}`} />{label}</button>)}</div>
+    </div>
+  );
+}
+
+function PieChart() {
+  const labels = ["개발", "운영", "디자인", "기획"];
+  const values = [42, 28, 18, 12];
+  const [selected, setSelected] = useState(0);
+  return (
+    <div className="advanced-chart pie-widget">
+      <button className="pie-chart" onClick={() => setSelected((current) => (current + 1) % values.length)} aria-label="다음 원형 차트 항목 보기"><span><strong>{values[selected]}%</strong><small>{labels[selected]}</small></span></button>
+      <div className="pie-legend">{labels.map((label, index) => <button key={label} className={selected === index ? "active" : ""} onClick={() => setSelected(index)}><i className={`pie-color-${index}`} /><span>{label}</span><b>{values[index]}%</b></button>)}</div>
+    </div>
+  );
+}
+
+function ScatterChart() {
+  const [group, setGroup] = useState("전체");
+  const [selected, setSelected] = useState<number | null>(null);
+  const points = [[12, 22, "A"], [21, 38, "B"], [30, 29, "A"], [37, 53, "A"], [46, 44, "B"], [52, 68, "A"], [61, 57, "B"], [68, 79, "A"], [75, 66, "B"], [83, 88, "A"], [91, 76, "B"]] as Array<[number, number, string]>;
+  return (
+    <div className="advanced-chart scatter-chart">
+      <div className="advanced-chart-head"><div><strong>0.78</strong><span>양의 상관관계</span></div><div className="segment-control">{["전체", "A팀", "B팀"].map((item) => <button key={item} className={group === item ? "active" : ""} onClick={() => { setGroup(item); setSelected(null); }}>{item}</button>)}</div></div>
+      <div className="scatter-plot"><div className="chart-grid-lines"><i /><i /><i /><i /></div><i className="scatter-trend" />{points.map(([x, y, team], index) => { const shown = group === "전체" || group.startsWith(team); return shown && <button key={index} className={`scatter-point team-${team} ${selected === index ? "selected" : ""}`} style={{ left: `${x}%`, bottom: `${y}%` }} onClick={() => setSelected(index)} aria-label={`비용 ${x}, 전환 ${y}`}><span>비용 {x} · 전환 {y}</span></button>; })}</div>
+      <div className="scatter-labels"><span>비용 낮음</span><span>비용 높음</span></div>
+    </div>
+  );
+}
+
+function RadarChart() {
+  const [team, setTeam] = useState("A팀");
+  const labels = ["기획", "실행", "협업", "품질", "속도"];
+  const values = team === "A팀" ? [86, 72, 91, 78, 84] : [68, 88, 76, 92, 70];
+  const points = values.map((value, index) => { const angle = -Math.PI / 2 + index * Math.PI * 2 / values.length; const radius = value * .42; return `${50 + Math.cos(angle) * radius}% ${50 + Math.sin(angle) * radius}%`; }).join(", ");
+  return (
+    <div className="advanced-chart radar-chart">
+      <div className="advanced-chart-head"><div><strong>{Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)}</strong><span>평균 역량 점수</span></div><div className="segment-control">{["A팀", "B팀"].map((item) => <button key={item} className={team === item ? "active" : ""} onClick={() => setTeam(item)}>{item}</button>)}</div></div>
+      <div className="radar-stage"><i className="radar-ring ring-1" /><i className="radar-ring ring-2" /><i className="radar-ring ring-3" /><i className="radar-data" style={{ clipPath: `polygon(${points})` }} />{labels.map((label, index) => <span key={label} className={`radar-label label-${index}`}>{label}<b>{values[index]}</b></span>)}</div>
+    </div>
+  );
+}
+
+function HeatmapChart() {
+  const [range, setRange] = useState("4주");
+  const [selected, setSelected] = useState<number | null>(null);
+  const count = range === "12주" ? 84 : 42;
+  const values = Array.from({ length: count }, (_, index) => (index * 17 + (index % 7) * 11 + (range === "12주" ? 13 : 0)) % 96);
+  return (
+    <div className="advanced-chart heatmap-chart">
+      <div className="advanced-chart-head"><div><strong>1,284</strong><span>{selected === null ? "전체 활동" : `${selected + 1}번째 구간 · ${values[selected]}건`}</span></div><div className="segment-control">{["4주", "12주"].map((item) => <button key={item} className={range === item ? "active" : ""} onClick={() => { setRange(item); setSelected(null); }}>{item}</button>)}</div></div>
+      <div className={`heatmap-grid ${range === "12주" ? "wide" : ""}`}>{values.map((value, index) => <button key={`${range}-${index}`} className={selected === index ? "selected" : ""} style={{ "--heat": `${.12 + value / 115}` } as CSSProperties} onClick={() => setSelected(index)} aria-label={`${index + 1}번째 구간 활동 ${value}건`}><span>{value}건</span></button>)}</div>
+      <div className="heatmap-scale"><span>낮음</span><i /><i /><i /><i /><span>높음</span></div>
+    </div>
+  );
+}
+
+function FunnelChart() {
+  const stages = [{ label: "방문", value: 12400, width: 100 }, { label: "관심", value: 8240, width: 78 }, { label: "검토", value: 4910, width: 57 }, { label: "신청", value: 2380, width: 38 }, { label: "완료", value: 1460, width: 24 }];
+  const [selected, setSelected] = useState(0);
+  const conversion = selected === 0 ? 100 : Math.round(stages[selected].value / stages[0].value * 100);
+  return (
+    <div className="advanced-chart funnel-chart">
+      <div className="funnel-summary"><strong>{stages[selected].value.toLocaleString()}</strong><span>{stages[selected].label} · 전체 대비 {conversion}%</span></div>
+      <div className="funnel-steps">{stages.map((stage, index) => <button key={stage.label} className={selected === index ? "active" : ""} style={{ width: `${stage.width}%` }} onClick={() => setSelected(index)}><span>{stage.label}</span><b>{stage.value.toLocaleString()}</b></button>)}</div>
+    </div>
+  );
+}
+
+type CustomTableRow = { id: string; title: string; checked: boolean; date: string; status: string; priority: string };
+type CustomTableColumn = { id: "text" | "check" | "date" | "combo" | "radio"; label: string };
+
+function CustomTablePreview({ settings }: { settings: Record<string, string> }) {
+  const defaultStatus = settings.comboDefault || "진행";
+  const defaultText = settings.textDefault || "새 업무";
+  const [columns, setColumns] = useState<CustomTableColumn[]>([
+    { id: "text", label: "텍스트" },
+    { id: "check", label: "체크박스" },
+    { id: "date", label: "날짜" },
+    { id: "combo", label: "상태" },
+    { id: "radio", label: "우선순위" },
+  ]);
+  const [rows, setRows] = useState<CustomTableRow[]>([
+    { id: "table-row-1", title: "요구사항 검토", checked: true, date: "2026-08-12", status: defaultStatus, priority: "높음" },
+    { id: "table-row-2", title: "화면 설계", checked: false, date: "2026-08-18", status: defaultStatus, priority: "일반" },
+  ]);
+  const [draggedColumn, setDraggedColumn] = useState<CustomTableColumn["id"] | null>(null);
+
+  useEffect(() => {
+    setRows((current) => current.map((row) => ({ ...row, status: defaultStatus })));
+  }, [defaultStatus]);
+
+  const updateRow = (id: string, patch: Partial<CustomTableRow>) => setRows((current) => current.map((row) => row.id === id ? { ...row, ...patch } : row));
+  const moveColumn = (fromId: CustomTableColumn["id"], toId: CustomTableColumn["id"]) => {
+    if (fromId === toId) return;
+    setColumns((current) => {
+      const next = [...current];
+      const from = next.findIndex((column) => column.id === fromId);
+      const to = next.findIndex((column) => column.id === toId);
+      if (from < 0 || to < 0) return current;
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+  const shiftColumn = (id: CustomTableColumn["id"], direction: -1 | 1) => setColumns((current) => {
+    const index = current.findIndex((column) => column.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= current.length) return current;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  });
+  const addRow = () => setRows((current) => [...current, { id: newId("table-row"), title: `${defaultText} ${current.length + 1}`, checked: false, date: new Date().toISOString().slice(0, 10), status: defaultStatus, priority: "일반" }]);
+  const gridStyle = { gridTemplateColumns: `repeat(${columns.length}, minmax(118px, 1fr)) 30px` };
+
+  const renderCell = (column: CustomTableColumn, row: CustomTableRow) => {
+    if (column.id === "text") return <input type="text" value={row.title} onChange={(event) => updateRow(row.id, { title: event.target.value })} aria-label="텍스트 입력" />;
+    if (column.id === "check") return <label className="table-check"><input type="checkbox" checked={row.checked} onChange={(event) => updateRow(row.id, { checked: event.target.checked })} /><span>{row.checked ? "완료" : "대기"}</span></label>;
+    if (column.id === "date") return <input type="date" value={row.date} onChange={(event) => updateRow(row.id, { date: event.target.value })} aria-label="날짜 선택" />;
+    if (column.id === "combo") return <select value={row.status} onChange={(event) => updateRow(row.id, { status: event.target.value })} aria-label="상태 선택"><option>대기</option><option>진행</option><option>검토</option><option>완료</option></select>;
+    return <div className="table-radio"><label><input type="radio" name={`priority-${row.id}`} checked={row.priority === "일반"} onChange={() => updateRow(row.id, { priority: "일반" })} />일반</label><label><input type="radio" name={`priority-${row.id}`} checked={row.priority === "높음"} onChange={() => updateRow(row.id, { priority: "높음" })} />높음</label></div>;
+  };
+
+  return (
+    <div className="custom-table-widget">
+      <div className="custom-table-toolbar"><span>열 머리글을 끌거나 화살표로 위치 변경</span><button onClick={addRow}>＋ 행 추가</button></div>
+      <div className="custom-table-scroll">
+        <div className="custom-table-row custom-table-head" style={gridStyle}>
+          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span></div>)}
+          <span />
+        </div>
+        {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.id}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}
+      </div>
+      <div className="custom-table-footer"><span>{rows.length}개 행</span><button onClick={addRow}>＋ 새 행 추가</button></div>
     </div>
   );
 }
@@ -419,6 +616,21 @@ function WidgetContent({ widget }: { widget: Widget }) {
     case "trend":
     case "bar":
       return <MiniChart variant={widget.type} />;
+    case "line":
+    case "area":
+      return <LineAreaChart variant={widget.type} />;
+    case "stackedBar":
+      return <StackedBarChart />;
+    case "pie":
+      return <PieChart />;
+    case "scatter":
+      return <ScatterChart />;
+    case "radar":
+      return <RadarChart />;
+    case "heatmap":
+      return <HeatmapChart />;
+    case "funnel":
+      return <FunnelChart />;
     case "donut":
       return <div className="donut-widget"><div className="donut" style={{ "--donut": `${value}%` } as CSSProperties}><div><strong>{value}%</strong><span>완료</span></div></div><div className="donut-legend"><span><i />완료 <b>{value}%</b></span><span><i />진행 <b>18%</b></span><span><i />대기 <b>8%</b></span></div></div>;
     case "gauge":
@@ -433,6 +645,8 @@ function WidgetContent({ widget }: { widget: Widget }) {
       return <AssignmentPreview />;
     case "poll":
       return <PollPreview settings={widget.settings} />;
+    case "customTable":
+      return <CustomTablePreview settings={widget.settings} />;
     case "kanban":
       return <KanbanPreview />;
     default:
@@ -451,6 +665,7 @@ function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { w
       {widget.type === "text" && <label>본문<textarea value={widget.settings.body ?? ""} onChange={(event) => onChange({}, { body: event.target.value })} /></label>}
       {widget.type === "button" && <label>버튼 문구<input value={widget.settings.label ?? ""} onChange={(event) => onChange({}, { label: event.target.value })} /></label>}
       {widget.type === "poll" && <><label>투표 질문<textarea value={widget.settings.question ?? ""} onChange={(event) => onChange({}, { question: event.target.value })} /></label><label>선택지 1<input value={widget.settings.option1 ?? ""} onChange={(event) => onChange({}, { option1: event.target.value })} /></label><label>선택지 2<input value={widget.settings.option2 ?? ""} onChange={(event) => onChange({}, { option2: event.target.value })} /></label><label>선택지 3<input value={widget.settings.option3 ?? ""} onChange={(event) => onChange({}, { option3: event.target.value })} /></label></>}
+      {widget.type === "customTable" && <><label>콤보박스 초기값<select value={widget.settings.comboDefault ?? "진행"} onChange={(event) => onChange({}, { comboDefault: event.target.value })}><option>대기</option><option>진행</option><option>검토</option><option>완료</option></select></label><label>새 행 텍스트 초기값<input value={widget.settings.textDefault ?? "새 업무"} onChange={(event) => onChange({}, { textDefault: event.target.value })} /></label></>}
       {hasValue && <label>표시 값<input value={widget.settings.value ?? ""} onChange={(event) => onChange({}, { value: event.target.value })} /></label>}
       {hasCaption && <label>보조 설명<input value={widget.settings.caption ?? ""} onChange={(event) => onChange({}, { caption: event.target.value })} /></label>}
       <label>가로 크기<div className="width-buttons">{(["third", "half", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
@@ -707,6 +922,30 @@ export default function Home() {
     setToast(parent ? `‘${parent.name}’ 아래에 하위 페이지를 추가했습니다.` : "최상위 페이지를 추가했습니다.");
   };
 
+  const deletePage = (pageId: string) => {
+    const removing = new Set([pageId]);
+    let foundChild = true;
+    while (foundChild) {
+      foundChild = false;
+      pages.forEach((page) => {
+        if (page.parentId && removing.has(page.parentId) && !removing.has(page.id)) {
+          removing.add(page.id);
+          foundChild = true;
+        }
+      });
+    }
+    const remaining = pages.filter((page) => !removing.has(page.id));
+    if (remaining.length === 0) {
+      setToast("마지막 페이지는 삭제할 수 없습니다.");
+      return;
+    }
+    const target = pages.find((page) => page.id === pageId);
+    setPages(remaining);
+    if (removing.has(activePageId)) setActivePageId(remaining[0].id);
+    setSelectedWidgetId(null);
+    setToast(`‘${target?.name ?? "페이지"}’${removing.size > 1 ? `와 하위 페이지 ${removing.size - 1}개를` : "를"} 삭제했습니다.`);
+  };
+
   return (
     <main className={`layout-app ${preview ? "preview-mode" : ""} ${draggingWidgetId ? "reordering" : ""}`} style={themeStyle} data-mode={theme.mode}>
       <header className="topbar">
@@ -733,7 +972,7 @@ export default function Home() {
           <nav>
             <span className="nav-label">PAGES</span>
             <span className="nav-helper">각 페이지의 ＋로 하위 페이지 추가</span>
-            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><span>{page.icon}</span><b>{page.name}</b><i>{page.widgets.length}</i></button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button></div>)}
+            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><span>{page.icon}</span><b>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
             <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
           <div className="sidebar-bottom"><span><i /> 자동 임시 저장</span><small>이 기기의 브라우저에 보관</small></div>
