@@ -485,6 +485,7 @@ export default function Home() {
   const hydrated = useRef(false);
   const pointerDrag = useRef<{ id: string; pointerId: number } | null>(null);
   const dropTargetRef = useRef<DropTarget | null>(null);
+  const loadPopoverRef = useRef<HTMLDivElement | null>(null);
 
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
   const theme = THEMES.find((item) => item.id === themeId) ?? THEMES[0];
@@ -560,6 +561,15 @@ export default function Home() {
     const timer = window.setTimeout(() => setToast(""), 2300);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!loadOpen) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!loadPopoverRef.current?.contains(event.target as Node)) setLoadOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [loadOpen]);
 
   const updateActivePage = (updater: (page: Page) => Page) => {
     setPages((current) => current.map((page) => page.id === activePageId ? updater(page) : page));
@@ -705,7 +715,7 @@ export default function Home() {
         <div className="top-actions">
           <span className="local-state"><i /> LOCAL</span>
           <button className={`preview-button ${preview ? "active" : ""}`} onClick={() => { setPreview((value) => !value); setThemeOpen(false); setLoadOpen(false); }}>{preview ? "편집으로" : "미리보기"}</button>
-          <div className="popover-wrap">
+          <div className="popover-wrap" ref={loadPopoverRef}>
             <button className="secondary-button" onClick={() => { setLoadOpen((value) => !value); setThemeOpen(false); }}>불러오기 <span>⌄</span></button>
             {loadOpen && <div className="load-popover popover-panel"><div className="popover-title"><span>SAVED LOCALLY</span><strong>저장된 레이아웃</strong></div>{savedLayouts.length === 0 ? <div className="empty-saves">아직 저장된 레이아웃이 없습니다.</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">L</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 삭제`}>×</button></div>)}</div>}
           </div>
