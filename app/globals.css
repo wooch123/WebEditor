@@ -955,9 +955,10 @@ select:focus-visible,
 .pie-legend .pie-color-3 { background: var(--elevated); }
 .pie-legend b { color: var(--text); }
 
-.scatter-plot { height: 157px; position: relative; margin: 0 12px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.scatter-chart { min-width: 0; overflow: hidden; }
+.scatter-plot { height: 157px; position: relative; margin: 0 12px; overflow: hidden; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .scatter-plot .chart-grid-lines { inset: 0; }
-.scatter-trend { position: absolute; left: 8%; bottom: 14%; width: 84%; height: 2px; background: color-mix(in srgb, var(--accent) 48%, transparent); transform: rotate(-38deg); transform-origin: left; pointer-events: none; }
+.scatter-trend { position: absolute; inset: 10% 7% 12%; background: color-mix(in srgb, var(--accent) 48%, transparent); clip-path: polygon(0 98%, 0 95.5%, 100% 0, 100% 2.5%); pointer-events: none; }
 .scatter-point { position: absolute; z-index: 2; width: 11px; height: 11px; padding: 0; border: 2px solid var(--surface); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent); transform: translate(-50%, 50%); cursor: pointer; }
 .scatter-point.team-B { background: var(--accent-2); box-shadow: 0 0 0 1px var(--accent-2); }
 .scatter-point.selected { width: 15px; height: 15px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }

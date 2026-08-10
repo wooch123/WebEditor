@@ -381,10 +381,6 @@ function CustomTablePreview({ settings }: { settings: Record<string, string> }) 
   ]);
   const [draggedColumn, setDraggedColumn] = useState<CustomTableColumn["id"] | null>(null);
 
-  useEffect(() => {
-    setRows((current) => current.map((row) => ({ ...row, status: defaultStatus })));
-  }, [defaultStatus]);
-
   const updateRow = (id: string, patch: Partial<CustomTableRow>) => setRows((current) => current.map((row) => row.id === id ? { ...row, ...patch } : row));
   const moveColumn = (fromId: CustomTableColumn["id"], toId: CustomTableColumn["id"]) => {
     if (fromId === toId) return;
@@ -646,7 +642,7 @@ function WidgetContent({ widget }: { widget: Widget }) {
     case "poll":
       return <PollPreview settings={widget.settings} />;
     case "customTable":
-      return <CustomTablePreview settings={widget.settings} />;
+      return <CustomTablePreview key={`${widget.id}-${widget.settings.comboDefault ?? "진행"}`} settings={widget.settings} />;
     case "kanban":
       return <KanbanPreview />;
     default:
