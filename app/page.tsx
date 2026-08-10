@@ -19,7 +19,8 @@ type WidgetType =
   | "editor"
   | "live"
   | "assign"
-  | "poll";
+  | "poll"
+  | "kanban";
 
 type WidgetWidth = "third" | "half" | "full";
 
@@ -128,6 +129,7 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
     { type: "live", label: "실시간 피드", icon: "L", description: "자동 갱신 카드" },
     { type: "assign", label: "담당자 배정", icon: "A", description: "사람과 업무 연결" },
     { type: "poll", label: "투표", icon: "V", description: "선택과 결과 집계" },
+    { type: "kanban", label: "칸반 보드", icon: "K", description: "단계별 업무 흐름" },
   ]},
 ];
 
@@ -142,7 +144,7 @@ function newId(prefix: string) {
 }
 
 function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
-  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "board", "editor", "live"];
+  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "board", "editor", "live", "kanban"];
   const defaults: Partial<Record<WidgetType, Record<string, string>>> = {
     hero: { subtitle: "팀의 핵심 업무와 현황을 한눈에 확인하세요.", eyebrow: "WORKSPACE" },
     text: { body: "팀이 함께 확인해야 할 안내와 설명을 입력하세요." },
@@ -161,6 +163,7 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     live: { caption: "팀 활동을 실시간으로 확인합니다." },
     assign: { caption: "업무 담당자와 마감일" },
     poll: { caption: "현재 36명 참여", question: "다음 팀 워크숍은 언제가 좋을까요?", option1: "8월 21일 금요일", option2: "8월 28일 금요일", option3: "9월 4일 금요일" },
+    kanban: { caption: "카드를 끌어 단계별로 이동하세요." },
   };
   return {
     id: newId("widget"),
@@ -337,6 +340,62 @@ function PollPreview({ settings }: { settings: Record<string, string> }) {
   );
 }
 
+type KanbanStatus = "backlog" | "progress" | "review" | "done";
+type KanbanCard = { id: string; title: string; status: KanbanStatus; assignee: string; priority: "높음" | "보통" | "낮음"; tag: string };
+
+function KanbanPreview() {
+  const columns: Array<{ id: KanbanStatus; label: string }> = [
+    { id: "backlog", label: "대기" },
+    { id: "progress", label: "진행 중" },
+    { id: "review", label: "검토" },
+    { id: "done", label: "완료" },
+  ];
+  const [cards, setCards] = useState<KanbanCard[]>([
+    { id: "kb-1", title: "신규 고객 온보딩 정리", status: "backlog", assignee: "JW", priority: "높음", tag: "기획" },
+    { id: "kb-2", title: "월간 운영 지표 대시보드", status: "progress", assignee: "MK", priority: "보통", tag: "데이터" },
+    { id: "kb-3", title: "모바일 화면 사용성 점검", status: "progress", assignee: "SY", priority: "높음", tag: "디자인" },
+    { id: "kb-4", title: "고객 안내 문구 검수", status: "review", assignee: "JH", priority: "낮음", tag: "콘텐츠" },
+    { id: "kb-5", title: "주간 업무 보고서 배포", status: "done", assignee: "MK", priority: "보통", tag: "운영" },
+  ]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const moveCard = (cardId: string, status: KanbanStatus) => {
+    setCards((current) => current.map((card) => card.id === cardId ? { ...card, status } : card));
+    setDraggingId(null);
+  };
+
+  const moveNext = (card: KanbanCard) => {
+    const index = columns.findIndex((column) => column.id === card.status);
+    moveCard(card.id, columns[(index + 1) % columns.length].id);
+  };
+
+  const addCard = (status: KanbanStatus) => {
+    const number = cards.length + 1;
+    setCards((current) => [...current, { id: newId("kanban"), title: `새 업무 ${number}`, status, assignee: "ME", priority: "보통", tag: "신규" }]);
+  };
+
+  return (
+    <div className="kanban-board" aria-label="업무 칸반 보드">
+      {columns.map((column) => {
+        const columnCards = cards.filter((card) => card.status === column.id);
+        return (
+          <section className={`kanban-column column-${column.id}`} key={column.id} onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const cardId = event.dataTransfer.getData("kanban/card"); if (cardId) moveCard(cardId, column.id); }}>
+            <header><span><i />{column.label}<b>{columnCards.length}</b></span><button onClick={() => addCard(column.id)} aria-label={`${column.label} 열에 업무 추가`}>＋</button></header>
+            <div className="kanban-card-list">
+              {columnCards.map((card) => <article key={card.id} className={`kanban-card ${draggingId === card.id ? "dragging" : ""}`} draggable onDragStart={(event) => { event.stopPropagation(); event.dataTransfer.setData("kanban/card", card.id); event.dataTransfer.effectAllowed = "move"; setDraggingId(card.id); }} onDragEnd={() => setDraggingId(null)}>
+                <div className="kanban-card-top"><span>{card.tag}</span><button onClick={() => moveNext(card)} aria-label={`${card.title} 다음 단계로 이동`} title="다음 단계로">→</button></div>
+                <strong>{card.title}</strong>
+                <footer><span className={`kanban-priority priority-${card.priority}`}>{card.priority}</span><span className="kanban-assignee">{card.assignee}</span></footer>
+              </article>)}
+              {columnCards.length === 0 && <div className="kanban-empty">카드를 이곳에 놓으세요</div>}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function WidgetContent({ widget }: { widget: Widget }) {
   const value = widget.settings.value ?? "";
   const caption = widget.settings.caption ?? "";
@@ -374,6 +433,8 @@ function WidgetContent({ widget }: { widget: Widget }) {
       return <AssignmentPreview />;
     case "poll":
       return <PollPreview settings={widget.settings} />;
+    case "kanban":
+      return <KanbanPreview />;
     default:
       return null;
   }
