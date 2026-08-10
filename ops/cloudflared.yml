@@ -1,0 +1,9 @@
+tunnel: 3b17b311-da25-436a-9d51-acaea9da7802
+credentials-file: C:/Users/wooch/.cloudflared/3b17b311-da25-436a-9d51-acaea9da7802.json
+
+ingress:
+  - hostname: workspace.dove9999.com
+    service: http://127.0.0.1:3210
+    originRequest:
+      connectTimeout: 10s
+  - service: http_status:404
