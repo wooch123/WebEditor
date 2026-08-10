@@ -189,7 +189,7 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     live: { caption: "팀 활동을 실시간으로 확인합니다." },
     assign: { caption: "업무 담당자와 마감일" },
     poll: { caption: "현재 36명 참여", question: "다음 팀 워크숍은 언제가 좋을까요?", option1: "8월 21일 금요일", option2: "8월 28일 금요일", option3: "9월 4일 금요일" },
-    customTable: { caption: "열을 끌어 순서를 바꾸고 행을 추가하세요.", comboDefault: "진행", textDefault: "새 업무" },
+    customTable: { caption: "열을 끌어 순서를 바꾸고 행을 추가하세요.", comboOptions: "대기,진행,검토,완료", comboDefault: "진행", radioOptions: "일반,높음", radioDefault: "일반", textDefault: "새 업무" },
     kanban: { caption: "카드를 끌어 단계별로 이동하세요." },
   };
   return {
@@ -366,7 +366,10 @@ type CustomTableRow = { id: string; title: string; checked: boolean; date: strin
 type CustomTableColumn = { id: "text" | "check" | "date" | "combo" | "radio"; label: string };
 
 function CustomTablePreview({ settings }: { settings: Record<string, string> }) {
-  const defaultStatus = settings.comboDefault || "진행";
+  const comboOptions = (settings.comboOptions || "대기,진행,검토,완료").split(",").map((value) => value.trim()).filter(Boolean);
+  const radioOptions = (settings.radioOptions || "일반,높음").split(",").map((value) => value.trim()).filter(Boolean);
+  const defaultStatus = comboOptions.includes(settings.comboDefault) ? settings.comboDefault : comboOptions[0] || "진행";
+  const defaultPriority = radioOptions.includes(settings.radioDefault) ? settings.radioDefault : radioOptions[0] || "일반";
   const defaultText = settings.textDefault || "새 업무";
   const [columns, setColumns] = useState<CustomTableColumn[]>([
     { id: "text", label: "텍스트" },
@@ -376,10 +379,12 @@ function CustomTablePreview({ settings }: { settings: Record<string, string> }) 
     { id: "radio", label: "우선순위" },
   ]);
   const [rows, setRows] = useState<CustomTableRow[]>([
-    { id: "table-row-1", title: "요구사항 검토", checked: true, date: "2026-08-12", status: defaultStatus, priority: "높음" },
-    { id: "table-row-2", title: "화면 설계", checked: false, date: "2026-08-18", status: defaultStatus, priority: "일반" },
+    { id: "table-row-1", title: "요구사항 검토", checked: true, date: "2026-08-12", status: defaultStatus, priority: radioOptions[1] || defaultPriority },
+    { id: "table-row-2", title: "화면 설계", checked: false, date: "2026-08-18", status: defaultStatus, priority: defaultPriority },
   ]);
   const [draggedColumn, setDraggedColumn] = useState<CustomTableColumn["id"] | null>(null);
+  const [columnWidths, setColumnWidths] = useState<Record<CustomTableColumn["id"], number>>({ text: 180, check: 112, date: 140, combo: 140, radio: 180 });
+  const columnResize = useRef<{ id: CustomTableColumn["id"]; pointerId: number; startX: number; startWidth: number } | null>(null);
 
   const updateRow = (id: string, patch: Partial<CustomTableRow>) => setRows((current) => current.map((row) => row.id === id ? { ...row, ...patch } : row));
   const moveColumn = (fromId: CustomTableColumn["id"], toId: CustomTableColumn["id"]) => {
@@ -402,23 +407,39 @@ function CustomTablePreview({ settings }: { settings: Record<string, string> }) 
     [next[index], next[target]] = [next[target], next[index]];
     return next;
   });
-  const addRow = () => setRows((current) => [...current, { id: newId("table-row"), title: `${defaultText} ${current.length + 1}`, checked: false, date: new Date().toISOString().slice(0, 10), status: defaultStatus, priority: "일반" }]);
-  const gridStyle = { gridTemplateColumns: `repeat(${columns.length}, minmax(118px, 1fr)) 30px` };
+  const startColumnResize = (event: React.PointerEvent<HTMLButtonElement>, id: CustomTableColumn["id"]) => {
+    event.preventDefault();
+    event.stopPropagation();
+    columnResize.current = { id, pointerId: event.pointerId, startX: event.clientX, startWidth: columnWidths[id] };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const trackColumnResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const active = columnResize.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    const width = Math.max(90, Math.min(360, active.startWidth + event.clientX - active.startX));
+    setColumnWidths((current) => ({ ...current, [active.id]: Math.round(width) }));
+  };
+  const finishColumnResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    columnResize.current = null;
+  };
+  const addRow = () => setRows((current) => [...current, { id: newId("table-row"), title: `${defaultText} ${current.length + 1}`, checked: false, date: new Date().toISOString().slice(0, 10), status: defaultStatus, priority: defaultPriority }]);
+  const gridStyle = { gridTemplateColumns: `${columns.map((column) => `minmax(${columnWidths[column.id]}px, ${columnWidths[column.id]}fr)`).join(" ")} 30px` };
 
   const renderCell = (column: CustomTableColumn, row: CustomTableRow) => {
     if (column.id === "text") return <input type="text" value={row.title} onChange={(event) => updateRow(row.id, { title: event.target.value })} aria-label="텍스트 입력" />;
     if (column.id === "check") return <label className="table-check"><input type="checkbox" checked={row.checked} onChange={(event) => updateRow(row.id, { checked: event.target.checked })} /><span>{row.checked ? "완료" : "대기"}</span></label>;
     if (column.id === "date") return <input type="date" value={row.date} onChange={(event) => updateRow(row.id, { date: event.target.value })} aria-label="날짜 선택" />;
-    if (column.id === "combo") return <select value={row.status} onChange={(event) => updateRow(row.id, { status: event.target.value })} aria-label="상태 선택"><option>대기</option><option>진행</option><option>검토</option><option>완료</option></select>;
-    return <div className="table-radio"><label><input type="radio" name={`priority-${row.id}`} checked={row.priority === "일반"} onChange={() => updateRow(row.id, { priority: "일반" })} />일반</label><label><input type="radio" name={`priority-${row.id}`} checked={row.priority === "높음"} onChange={() => updateRow(row.id, { priority: "높음" })} />높음</label></div>;
+    if (column.id === "combo") return <select value={row.status} onChange={(event) => updateRow(row.id, { status: event.target.value })} aria-label="상태 선택">{comboOptions.map((option) => <option key={option}>{option}</option>)}</select>;
+    return <div className="table-radio">{radioOptions.map((option) => <label key={option}><input type="radio" name={`priority-${row.id}`} checked={row.priority === option} onChange={() => updateRow(row.id, { priority: option })} />{option}</label>)}</div>;
   };
 
   return (
     <div className="custom-table-widget">
-      <div className="custom-table-toolbar"><span>열 머리글을 끌거나 화살표로 위치 변경</span><button onClick={addRow}>＋ 행 추가</button></div>
+      <div className="custom-table-toolbar"><span>머리글은 순서 변경 · 경계선은 너비 조절</span><button onClick={addRow}>＋ 행 추가</button></div>
       <div className="custom-table-scroll">
         <div className="custom-table-row custom-table-head" style={gridStyle}>
-          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span></div>)}
+          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}<small>{columnWidths[column.id]}px</small></span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
           <span />
         </div>
         {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.id}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}
@@ -642,7 +663,7 @@ function WidgetContent({ widget }: { widget: Widget }) {
     case "poll":
       return <PollPreview settings={widget.settings} />;
     case "customTable":
-      return <CustomTablePreview key={`${widget.id}-${widget.settings.comboDefault ?? "진행"}`} settings={widget.settings} />;
+      return <CustomTablePreview key={`${widget.id}-${widget.settings.comboOptions}-${widget.settings.comboDefault}-${widget.settings.radioOptions}-${widget.settings.radioDefault}`} settings={widget.settings} />;
     case "kanban":
       return <KanbanPreview />;
     default:
@@ -653,6 +674,8 @@ function WidgetContent({ widget }: { widget: Widget }) {
 function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { widget: Widget; onChange: (patch: Partial<Widget>, settings?: Record<string, string>) => void; onClose: () => void; onDelete: () => void; onDuplicate: () => void }) {
   const hasValue = ["stat", "progress", "profile", "donut", "gauge", "status"].includes(widget.type);
   const hasCaption = !["hero", "text", "button", "form"].includes(widget.type);
+  const customComboOptions = (widget.settings.comboOptions || "대기,진행,검토,완료").split(",").map((value) => value.trim()).filter(Boolean);
+  const customRadioOptions = (widget.settings.radioOptions || "일반,높음").split(",").map((value) => value.trim()).filter(Boolean);
   return (
     <div className="settings-panel" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
       <div className="settings-head"><div><span>ELEMENT SETTINGS</span><strong>{LABELS[widget.type]}</strong></div><button onClick={onClose} aria-label="설정 닫기">×</button></div>
@@ -661,7 +684,7 @@ function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { w
       {widget.type === "text" && <label>본문<textarea value={widget.settings.body ?? ""} onChange={(event) => onChange({}, { body: event.target.value })} /></label>}
       {widget.type === "button" && <label>버튼 문구<input value={widget.settings.label ?? ""} onChange={(event) => onChange({}, { label: event.target.value })} /></label>}
       {widget.type === "poll" && <><label>투표 질문<textarea value={widget.settings.question ?? ""} onChange={(event) => onChange({}, { question: event.target.value })} /></label><label>선택지 1<input value={widget.settings.option1 ?? ""} onChange={(event) => onChange({}, { option1: event.target.value })} /></label><label>선택지 2<input value={widget.settings.option2 ?? ""} onChange={(event) => onChange({}, { option2: event.target.value })} /></label><label>선택지 3<input value={widget.settings.option3 ?? ""} onChange={(event) => onChange({}, { option3: event.target.value })} /></label></>}
-      {widget.type === "customTable" && <><label>콤보박스 초기값<select value={widget.settings.comboDefault ?? "진행"} onChange={(event) => onChange({}, { comboDefault: event.target.value })}><option>대기</option><option>진행</option><option>검토</option><option>완료</option></select></label><label>새 행 텍스트 초기값<input value={widget.settings.textDefault ?? "새 업무"} onChange={(event) => onChange({}, { textDefault: event.target.value })} /></label></>}
+      {widget.type === "customTable" && <><label>콤보박스 값 · 쉼표로 구분<input value={widget.settings.comboOptions ?? "대기,진행,검토,완료"} onChange={(event) => onChange({}, { comboOptions: event.target.value })} /></label><label>콤보박스 초기값<select value={customComboOptions.includes(widget.settings.comboDefault) ? widget.settings.comboDefault : customComboOptions[0] ?? ""} onChange={(event) => onChange({}, { comboDefault: event.target.value })}>{customComboOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label>라디오 버튼 값 · 쉼표로 구분<input value={widget.settings.radioOptions ?? "일반,높음"} onChange={(event) => onChange({}, { radioOptions: event.target.value })} /></label><label>라디오 버튼 초기값<select value={customRadioOptions.includes(widget.settings.radioDefault) ? widget.settings.radioDefault : customRadioOptions[0] ?? ""} onChange={(event) => onChange({}, { radioDefault: event.target.value })}>{customRadioOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label>새 행 텍스트 초기값<input value={widget.settings.textDefault ?? "새 업무"} onChange={(event) => onChange({}, { textDefault: event.target.value })} /></label></>}
       {hasValue && <label>표시 값<input value={widget.settings.value ?? ""} onChange={(event) => onChange({}, { value: event.target.value })} /></label>}
       {hasCaption && <label>보조 설명<input value={widget.settings.caption ?? ""} onChange={(event) => onChange({}, { caption: event.target.value })} /></label>}
       <label>가로 크기<div className="width-buttons">{(["third", "half", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
