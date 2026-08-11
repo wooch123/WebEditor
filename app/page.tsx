@@ -113,6 +113,8 @@ type SavedLayout = {
   themeId: string;
   customTheme?: Theme;
   fontSize?: number;
+  pagePanelPosition?: PagePanelPosition;
+  pagePanelSize?: number;
 };
 
 type DropTarget = {
@@ -123,9 +125,25 @@ type DropTarget = {
 const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 15;
 const DEFAULT_FONT_SIZE = 13;
+type PagePanelPosition = "left" | "top" | "right";
+const DEFAULT_PAGE_PANEL_SIZE = 236;
+const MIN_PAGE_PANEL_WIDTH = 200;
+const MAX_PAGE_PANEL_WIDTH = 420;
+const MIN_PAGE_PANEL_HEIGHT = 180;
+const MAX_PAGE_PANEL_HEIGHT = 380;
 
 function clampFontSize(value: number) {
   return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, value));
+}
+
+function normalizePagePanelPosition(value: unknown): PagePanelPosition {
+  return value === "top" || value === "right" ? value : "left";
+}
+
+function clampPagePanelSize(value: number, position: PagePanelPosition) {
+  const minimum = position === "top" ? MIN_PAGE_PANEL_HEIGHT : MIN_PAGE_PANEL_WIDTH;
+  const maximum = position === "top" ? MAX_PAGE_PANEL_HEIGHT : MAX_PAGE_PANEL_WIDTH;
+  return Math.max(minimum, Math.min(maximum, Math.round(value)));
 }
 
 type ServerStatus = "connecting" | "online" | "offline";
@@ -1356,6 +1374,8 @@ export default function Home() {
   const [themeId, setThemeId] = useState(THEMES[0].id);
   const [customTheme, setCustomTheme] = useState<Theme>(DEFAULT_CUSTOM_THEME);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
+  const [pagePanelPosition, setPagePanelPosition] = useState<PagePanelPosition>("left");
+  const [pagePanelSize, setPagePanelSize] = useState(DEFAULT_PAGE_PANEL_SIZE);
   const [workspaceName, setWorkspaceName] = useState("업무 포털 v1");
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -1373,6 +1393,7 @@ export default function Home() {
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const hydrated = useRef(false);
   const pointerDrag = useRef<{ id: string; pointerId: number } | null>(null);
+  const pagePanelResize = useRef<{ pointerId: number; startX: number; startY: number; startSize: number; position: PagePanelPosition } | null>(null);
   const dropTargetRef = useRef<DropTarget | null>(null);
   const loadPopoverRef = useRef<HTMLDivElement | null>(null);
   const themePopoverRef = useRef<HTMLDivElement | null>(null);
@@ -1428,6 +1449,7 @@ export default function Home() {
     "--positive": theme.positive,
     "--font-step": `${fontSize - 12}px`,
     "--density-step": `${Math.max(0, fontSize - DEFAULT_FONT_SIZE)}px`,
+    "--page-panel-size": `${pagePanelSize}px`,
     colorScheme: theme.mode,
   } as CSSProperties;
 
@@ -1454,6 +1476,9 @@ export default function Home() {
             setThemeId(parsed.themeId);
           }
           setFontSize(clampFontSize(parsed.fontSize ?? DEFAULT_FONT_SIZE));
+          const parsedPanelPosition = normalizePagePanelPosition(parsed.pagePanelPosition);
+          setPagePanelPosition(parsedPanelPosition);
+          setPagePanelSize(clampPagePanelSize(parsed.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE, parsedPanelPosition));
           setWorkspaceName(parsed.name);
         }
       }
@@ -1501,10 +1526,10 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated.current) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize }));
+      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize, pagePanelPosition, pagePanelSize }));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [pages, themeId, customTheme, workspaceName, fontSize]);
+  }, [pages, themeId, customTheme, workspaceName, fontSize, pagePanelPosition, pagePanelSize]);
 
   useEffect(() => {
     if (!toast) return;
@@ -1667,7 +1692,7 @@ export default function Home() {
     const name = workspaceName.trim();
     if (!name) { setToast("저장할 레이아웃 이름을 입력해 주세요."); return; }
     if (savedLayouts.some((item) => item.name === name) && !window.confirm(`공유 저장소의 ‘${name}’ 레이아웃을 덮어쓸까요?`)) return;
-    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize };
+    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize, pagePanelPosition, pagePanelSize };
     setSavingLayout(true);
     try {
       const { layouts } = await persistSharedLayout(record);
@@ -1697,6 +1722,9 @@ export default function Home() {
       setThemeId(layout.themeId);
     }
     setFontSize(clampFontSize(layout.fontSize ?? DEFAULT_FONT_SIZE));
+    const loadedPanelPosition = normalizePagePanelPosition(layout.pagePanelPosition);
+    setPagePanelPosition(loadedPanelPosition);
+    setPagePanelSize(clampPagePanelSize(layout.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE, loadedPanelPosition));
     setWorkspaceName(layout.name);
     setSelectedWidgetId(null);
     setLoadOpen(false);
@@ -1718,6 +1746,37 @@ export default function Home() {
 
   const changeFontSize = (delta: number) => {
     setFontSize((current) => clampFontSize(current + delta));
+  };
+
+  const changePagePanelPosition = (position: PagePanelPosition) => {
+    setPagePanelPosition(position);
+    setPagePanelSize((current) => clampPagePanelSize(current, position));
+    setToast(`페이지 영역을 ${position === "left" ? "왼쪽" : position === "top" ? "위쪽" : "오른쪽"}으로 이동했습니다.`);
+  };
+
+  const startPagePanelResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    pagePanelResize.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startSize: pagePanelSize, position: pagePanelPosition };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const trackPagePanelResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const active = pagePanelResize.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const delta = active.position === "left"
+      ? event.clientX - active.startX
+      : active.position === "right"
+        ? active.startX - event.clientX
+        : event.clientY - active.startY;
+    setPagePanelSize(clampPagePanelSize(active.startSize + delta, active.position));
+  };
+
+  const finishPagePanelResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (pagePanelResize.current?.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pagePanelResize.current = null;
   };
 
   const useCurrentThemeAsCustom = () => {
@@ -1798,7 +1857,7 @@ export default function Home() {
   };
 
   return (
-    <main className={`layout-app ${preview ? "preview-mode" : ""} ${draggingWidgetId ? "reordering" : ""}`} style={themeStyle} data-mode={theme.mode}>
+    <main className={`layout-app page-panel-${pagePanelPosition} ${preview ? "preview-mode" : ""} ${draggingWidgetId ? "reordering" : ""}`} style={themeStyle} data-mode={theme.mode}>
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><i /><i /><i /></span><strong>Layout Lab</strong><em>WORKSPACE BUILDER</em></div>
         <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> 레이아웃 편집</span><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
@@ -1838,6 +1897,12 @@ export default function Home() {
 
       <div className="app-body">
         <aside className="page-sidebar">
+          <div className="page-panel-controls">
+            <span>PAGE AREA <output>{pagePanelSize}px</output></span>
+            <div role="group" aria-label="페이지 영역 위치 선택">
+              {(["left", "top", "right"] as PagePanelPosition[]).map((position) => <button type="button" key={position} className={pagePanelPosition === position ? "active" : ""} aria-pressed={pagePanelPosition === position} onClick={() => changePagePanelPosition(position)} title={`페이지 영역을 ${position === "left" ? "왼쪽" : position === "top" ? "위쪽" : "오른쪽"}에 배치`}>{position === "left" ? "좌" : position === "top" ? "상" : "우"}</button>)}
+            </div>
+          </div>
           <div className="user-block"><span className="avatar avatar-accent">YL</span><div><strong>워크스페이스</strong><span>관리자 모드</span></div><button>•••</button></div>
           <nav>
             <span className="nav-label">PAGES</span>
@@ -1857,6 +1922,7 @@ export default function Home() {
             <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
           <div className={`sidebar-bottom status-${serverStatus}`}><span><i /> {serverStatus === "online" ? "공유 저장소 연결됨" : serverStatus === "connecting" ? "공유 저장소 연결 중" : "공유 저장소 오프라인"}</span><small>{serverStatus === "online" ? "이름으로 저장하면 모든 사용자에게 표시" : "임시 초안은 이 기기에 안전하게 유지"}</small></div>
+          <button type="button" className="page-panel-resizer" onPointerDown={startPagePanelResize} onPointerMove={trackPagePanelResize} onPointerUp={finishPagePanelResize} onPointerCancel={finishPagePanelResize} aria-label={`페이지 영역 ${pagePanelPosition === "top" ? "높이" : "너비"} 조절 · 현재 ${pagePanelSize}px`} title={`끌어서 페이지 영역 ${pagePanelPosition === "top" ? "높이" : "너비"} 조절`}><span /></button>
         </aside>
 
         {!preview && <aside className="toolbox">

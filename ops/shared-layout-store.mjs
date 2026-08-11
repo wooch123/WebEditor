@@ -56,8 +56,13 @@ function normalizeLayout(value) {
   if (typeof value.themeId !== "string" || value.themeId.length > 100) throw Object.assign(new Error("테마 데이터가 올바르지 않습니다."), { status: 400 });
   const updatedAt = Number.isFinite(Number(value.updatedAt)) ? Number(value.updatedAt) : Date.now();
   const fontSize = Number.isFinite(Number(value.fontSize)) ? Math.max(8, Math.min(15, Number(value.fontSize))) : 13;
+  const pagePanelPosition = value.pagePanelPosition === "top" || value.pagePanelPosition === "right" ? value.pagePanelPosition : "left";
+  const rawPagePanelSize = Number(value.pagePanelSize);
+  const minimumPanelSize = pagePanelPosition === "top" ? 180 : 200;
+  const maximumPanelSize = pagePanelPosition === "top" ? 380 : 420;
+  const pagePanelSize = Number.isFinite(rawPagePanelSize) ? Math.max(minimumPanelSize, Math.min(maximumPanelSize, Math.round(rawPagePanelSize))) : 236;
   const customTheme = value.themeId === "custom" ? normalizeCustomTheme(value.customTheme) : undefined;
-  return { name, updatedAt, pages: value.pages, themeId: value.themeId, ...(customTheme ? { customTheme } : {}), fontSize };
+  return { name, updatedAt, pages: value.pages, themeId: value.themeId, ...(customTheme ? { customTheme } : {}), fontSize, pagePanelPosition, pagePanelSize };
 }
 
 export function createSharedLayoutStore(storagePath) {
