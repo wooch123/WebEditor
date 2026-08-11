@@ -77,6 +77,7 @@ type SavedLayout = {
   updatedAt: number;
   pages: Page[];
   themeId: string;
+  fontSize?: number;
 };
 
 type DropTarget = {
@@ -884,6 +885,7 @@ export default function Home() {
   const [pages, setPages] = useState<Page[]>(INITIAL_PAGES);
   const [activePageId, setActivePageId] = useState(INITIAL_PAGES[0].id);
   const [themeId, setThemeId] = useState(THEMES[0].id);
+  const [fontSize, setFontSize] = useState(13);
   const [workspaceName, setWorkspaceName] = useState("업무 포털 v1");
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -949,6 +951,7 @@ export default function Home() {
     "--accent": theme.accent,
     "--accent-2": theme.accent2,
     "--positive": theme.positive,
+    "--font-step": `${fontSize - 12}px`,
     colorScheme: theme.mode,
   } as CSSProperties;
 
@@ -963,6 +966,7 @@ export default function Home() {
           setPages(parsed.pages);
           setActivePageId(parsed.pages[0].id);
           setThemeId(parsed.themeId);
+          setFontSize(Math.max(12, Math.min(14, parsed.fontSize ?? 13)));
           setWorkspaceName(parsed.name);
         }
       }
@@ -973,10 +977,10 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated.current) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId }));
+      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, fontSize }));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [pages, themeId, workspaceName]);
+  }, [pages, themeId, workspaceName, fontSize]);
 
   useEffect(() => {
     if (!toast) return;
@@ -1117,7 +1121,7 @@ export default function Home() {
   const saveLayout = () => {
     const name = workspaceName.trim();
     if (!name) { setToast("저장할 레이아웃 이름을 입력해 주세요."); return; }
-    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId };
+    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, fontSize };
     const next = [record, ...savedLayouts.filter((item) => item.name !== name)];
     setSavedLayouts(next);
     localStorage.setItem("layoutlab:saves", JSON.stringify(Object.fromEntries(next.map((item) => [item.name, item]))));
@@ -1128,6 +1132,7 @@ export default function Home() {
     setPages(layout.pages);
     setActivePageId(layout.pages[0].id);
     setThemeId(layout.themeId);
+    setFontSize(Math.max(12, Math.min(14, layout.fontSize ?? 13)));
     setWorkspaceName(layout.name);
     setSelectedWidgetId(null);
     setLoadOpen(false);
@@ -1138,6 +1143,10 @@ export default function Home() {
     const next = savedLayouts.filter((item) => item.name !== name);
     setSavedLayouts(next);
     localStorage.setItem("layoutlab:saves", JSON.stringify(Object.fromEntries(next.map((item) => [item.name, item]))));
+  };
+
+  const changeFontSize = (delta: number) => {
+    setFontSize((current) => Math.max(12, Math.min(14, current + delta)));
   };
 
   const addPage = (parentId: string | null = null) => {
@@ -1181,6 +1190,7 @@ export default function Home() {
         <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> 레이아웃 편집</span><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
         <div className="top-actions">
           <span className="local-state"><i /> LOCAL</span>
+          <div className="font-size-control" role="group" aria-label="전체 글꼴 크기 조절"><button type="button" disabled={fontSize <= 12} onClick={() => changeFontSize(-1)} aria-label="전체 글꼴 한 단계 작게" title="글꼴 1px 작게">A−</button><output aria-live="polite">{fontSize}px</output><button type="button" disabled={fontSize >= 14} onClick={() => changeFontSize(1)} aria-label="전체 글꼴 한 단계 크게" title="글꼴 1px 크게">A＋</button></div>
           <button className={`preview-button ${preview ? "active" : ""}`} onClick={() => { setPreview((value) => !value); setThemeOpen(false); setLoadOpen(false); }}>{preview ? "편집으로" : "미리보기"}</button>
           <div className="popover-wrap" ref={loadPopoverRef}>
             <button className="secondary-button" onClick={() => { setLoadOpen((value) => !value); setThemeOpen(false); }}>불러오기 <span>⌄</span></button>
