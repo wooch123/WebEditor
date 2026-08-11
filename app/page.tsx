@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 type WidgetType =
   | "hero"
@@ -23,6 +23,14 @@ type WidgetType =
   | "funnel"
   | "donut"
   | "gauge"
+  | "horizontalBar"
+  | "waterfall"
+  | "bubble"
+  | "treemap"
+  | "candlestick"
+  | "boxPlot"
+  | "sankey"
+  | "pareto"
   | "board"
   | "editor"
   | "live"
@@ -238,6 +246,14 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
     { type: "funnel", label: "퍼널 차트", icon: "▽", description: "단계별 전환 분석" },
     { type: "donut", label: "도넛 차트", icon: "◉", description: "비중 분석" },
     { type: "gauge", label: "게이지", icon: "◔", description: "달성 현황" },
+    { type: "horizontalBar", label: "가로 막대", icon: "▰", description: "순위와 항목 비교" },
+    { type: "waterfall", label: "폭포 차트", icon: "▟", description: "증감 요인 분석" },
+    { type: "bubble", label: "버블 차트", icon: "●", description: "규모와 관계 비교" },
+    { type: "treemap", label: "트리맵", icon: "▦", description: "계층별 구성 비중" },
+    { type: "candlestick", label: "캔들스틱", icon: "↕", description: "범위와 변동 분석" },
+    { type: "boxPlot", label: "박스 플롯", icon: "⊢", description: "분포와 이상치 비교" },
+    { type: "sankey", label: "생키 차트", icon: "⇉", description: "유입과 흐름 추적" },
+    { type: "pareto", label: "파레토 차트", icon: "◩", description: "누적 영향도 분석" },
   ]},
   { category: "업무 도구", items: [
     { type: "board", label: "업무 게시판", icon: "B", description: "필터 가능한 목록" },
@@ -338,7 +354,7 @@ function newId(prefix: string) {
 }
 
 function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
-  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "board", "editor", "live", "customTable", "kanban", "gantt"];
+  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "horizontalBar", "waterfall", "bubble", "treemap", "candlestick", "boxPlot", "sankey", "pareto", "board", "editor", "live", "customTable", "kanban", "gantt"];
   const defaults: Partial<Record<WidgetType, Record<string, string>>> = {
     hero: { subtitle: "팀의 핵심 업무와 현황을 한눈에 확인하세요.", eyebrow: "WORKSPACE" },
     text: { body: "팀이 함께 확인해야 할 안내와 설명을 입력하세요." },
@@ -360,6 +376,14 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     funnel: { caption: "고객 전환 단계" },
     donut: { value: "74", caption: "완료 비율" },
     gauge: { value: "82", caption: "서비스 목표" },
+    horizontalBar: { caption: "팀별 처리량 순위" },
+    waterfall: { caption: "월간 손익 증감 요인" },
+    bubble: { caption: "프로젝트 가치와 위험도" },
+    treemap: { caption: "업무 영역별 리소스 비중" },
+    candlestick: { caption: "일별 지표 변동 범위" },
+    boxPlot: { caption: "팀별 처리 시간 분포" },
+    sankey: { caption: "요청 유입과 처리 흐름" },
+    pareto: { caption: "이슈 원인별 누적 영향" },
     board: { caption: "팀 전체 업무" },
     editor: { caption: "공유 문서" },
     live: { caption: "팀 활동을 실시간으로 확인합니다." },
@@ -538,6 +562,93 @@ function FunnelChart() {
       <div className="funnel-steps">{stages.map((stage, index) => <button key={stage.label} className={selected === index ? "active" : ""} style={{ width: `${stage.width}%` }} onClick={() => setSelected(index)}><span>{stage.label}</span><b>{stage.value.toLocaleString()}</b></button>)}</div>
     </div>
   );
+}
+
+type ExtendedChartType = "horizontalBar" | "waterfall" | "bubble" | "treemap" | "candlestick" | "boxPlot" | "sankey" | "pareto";
+
+function ExtendedChart({ variant }: { variant: ExtendedChartType }) {
+  const [selected, setSelected] = useState(0);
+  const [mode, setMode] = useState("실적");
+  const factor = mode === "실적" ? 1 : .86;
+  const meta: Record<ExtendedChartType, { value: string; target: string; label: string }> = {
+    horizontalBar: { value: "428건", target: "500건", label: "팀별 처리량" },
+    waterfall: { value: "₩128M", target: "₩150M", label: "순이익 기여" },
+    bubble: { value: "12개", target: "16개", label: "핵심 프로젝트" },
+    treemap: { value: "2,480h", target: "2,900h", label: "리소스 배분" },
+    candlestick: { value: "84.6", target: "90.0", label: "운영 지수" },
+    boxPlot: { value: "4.8h", target: "4.0h", label: "중앙 처리 시간" },
+    sankey: { value: "1,284", target: "1,500", label: "처리된 요청" },
+    pareto: { value: "82%", target: "90%", label: "상위 원인 누적" },
+  };
+  const heading = meta[variant];
+
+  const horizontalData = [
+    ["플랫폼", 96], ["제품", 82], ["운영", 71], ["데이터", 58], ["디자인", 43],
+  ] as Array<[string, number]>;
+  const waterfallData = [
+    { label: "매출", value: 126, start: 0, size: 61, tone: "total" },
+    { label: "신규", value: 24, start: 61, size: 18, tone: "up" },
+    { label: "할인", value: -11, start: 52, size: 9, tone: "down" },
+    { label: "원가", value: -18, start: 37, size: 15, tone: "down" },
+    { label: "기타", value: 7, start: 37, size: 7, tone: "up" },
+    { label: "이익", value: 128, start: 0, size: 58, tone: "total" },
+  ];
+  const bubbleData = [
+    { label: "AI 전환", x: 73, y: 74, size: 48 }, { label: "모바일", x: 38, y: 58, size: 38 }, { label: "데이터", x: 62, y: 42, size: 32 },
+    { label: "ERP", x: 24, y: 30, size: 27 }, { label: "보안", x: 83, y: 27, size: 23 }, { label: "리뉴얼", x: 46, y: 82, size: 20 },
+  ];
+  const treemapData = [
+    { label: "제품 개발", value: 34, area: "1 / 1 / 3 / 3" }, { label: "고객 운영", value: 22, area: "1 / 3 / 2 / 5" },
+    { label: "데이터", value: 16, area: "2 / 3 / 4 / 4" }, { label: "마케팅", value: 12, area: "2 / 4 / 3 / 5" },
+    { label: "인프라", value: 9, area: "3 / 1 / 4 / 3" }, { label: "기타", value: 7, area: "3 / 4 / 4 / 5" },
+  ];
+  const candleData = [
+    { open: 42, close: 58, low: 29, high: 72 }, { open: 61, close: 48, low: 38, high: 76 }, { open: 52, close: 69, low: 44, high: 82 },
+    { open: 72, close: 64, low: 55, high: 88 }, { open: 66, close: 78, low: 58, high: 91 }, { open: 81, close: 70, low: 62, high: 94 },
+    { open: 73, close: 86, low: 68, high: 97 },
+  ];
+  const boxData = [
+    { label: "플랫폼", min: 14, q1: 28, median: 43, q3: 61, max: 82 }, { label: "제품", min: 9, q1: 24, median: 38, q3: 54, max: 73 },
+    { label: "운영", min: 22, q1: 36, median: 52, q3: 69, max: 91 }, { label: "데이터", min: 16, q1: 31, median: 47, q3: 64, max: 86 },
+  ];
+  const sankeyNodes = [
+    { label: "웹", value: 520, left: "0%", top: "8%", tone: 0 }, { label: "앱", value: 428, left: "0%", top: "64%", tone: 1 },
+    { label: "자동", value: 612, left: "39%", top: "5%", tone: 2 }, { label: "상담", value: 336, left: "39%", top: "66%", tone: 3 },
+    { label: "완료", value: 741, left: "78%", top: "9%", tone: 0 }, { label: "보류", value: 207, left: "78%", top: "65%", tone: 1 },
+  ];
+  const sankeyPaths = [
+    { left: "16%", top: "28%", width: "28%", angle: 6 }, { left: "16%", top: "35%", width: "29%", angle: 36 },
+    { left: "16%", top: "69%", width: "29%", angle: -32 }, { left: "16%", top: "76%", width: "28%", angle: -4 },
+    { left: "55%", top: "27%", width: "28%", angle: 5 }, { left: "55%", top: "34%", width: "29%", angle: 36 },
+    { left: "55%", top: "69%", width: "29%", angle: -33 }, { left: "55%", top: "76%", width: "28%", angle: -5 },
+  ];
+  const paretoValues = [31, 24, 18, 14, 8, 5];
+  const paretoLabels = ["권한", "입력", "연동", "지연", "표시", "기타"];
+  const paretoCumulative = paretoValues.map((_, index) => paretoValues.slice(0, index + 1).reduce((sum, value) => sum + value, 0));
+
+  let chart: ReactNode;
+  if (variant === "horizontalBar") {
+    chart = <div className="horizontal-bar-plot">{horizontalData.map(([label, raw], index) => { const value = Math.round(raw * factor); return <button key={label} className={selected === index ? "selected" : ""} onClick={() => setSelected(index)} aria-label={`${label} ${value}건`}><span>{label}</span><i><em style={{ width: `${value}%` }} /></i><b>{value}</b></button>; })}</div>;
+  } else if (variant === "waterfall") {
+    chart = <div className="waterfall-plot">{waterfallData.map((item, index) => <div className="waterfall-column" key={item.label}><button className={`${item.tone} ${selected === index ? "selected" : ""}`} style={{ bottom: `${item.start}%`, height: `${item.size}%` }} onClick={() => setSelected(index)} aria-label={`${item.label} ${item.value > 0 ? "+" : ""}${Math.round(item.value * factor)}억`}><span>{item.value > 0 && index > 0 && index < waterfallData.length - 1 ? "+" : ""}{Math.round(item.value * factor)}</span></button><small>{item.label}</small></div>)}</div>;
+  } else if (variant === "bubble") {
+    chart = <div className="bubble-plot"><div className="chart-grid-lines"><i /><i /><i /><i /></div>{bubbleData.map((item, index) => <button key={item.label} className={`bubble-point tone-${index % 3} ${selected === index ? "selected" : ""}`} style={{ left: `${item.x}%`, bottom: `${item.y}%`, width: `${Math.round(item.size * factor)}px`, height: `${Math.round(item.size * factor)}px` }} onClick={() => setSelected(index)} aria-label={`${item.label} 가치 ${item.x}, 위험 ${item.y}`}><span>{item.label}</span></button>)}</div>;
+  } else if (variant === "treemap") {
+    chart = <div className="treemap-plot">{treemapData.map((item, index) => <button key={item.label} className={`tone-${index % 4} ${selected === index ? "selected" : ""}`} style={{ gridArea: item.area }} onClick={() => setSelected(index)}><strong>{item.label}</strong><span>{Math.round(item.value * factor)}%</span></button>)}</div>;
+  } else if (variant === "candlestick") {
+    chart = <div className="candle-plot">{candleData.map((item, index) => { const rising = item.close >= item.open; return <button key={index} className={`${rising ? "rising" : "falling"} ${selected === index ? "selected" : ""}`} onClick={() => setSelected(index)} aria-label={`${index + 1}일 시가 ${item.open}, 종가 ${item.close}`}><i className="candle-wick" style={{ bottom: `${item.low}%`, height: `${item.high - item.low}%` }} /><i className="candle-body" style={{ bottom: `${Math.min(item.open, item.close)}%`, height: `${Math.max(6, Math.abs(item.close - item.open))}%` }} /><span>{Math.round(item.close * factor)}</span></button>; })}</div>;
+  } else if (variant === "boxPlot") {
+    chart = <div className="boxplot-plot">{boxData.map((item, index) => <div className={`boxplot-row ${selected === index ? "selected" : ""}`} key={item.label}><span>{item.label}</span><button onClick={() => setSelected(index)} aria-label={`${item.label} 중앙값 ${item.median}`}><i className="box-whisker" style={{ left: `${item.min}%`, width: `${item.max - item.min}%` }} /><i className="box-cap cap-min" style={{ left: `${item.min}%` }} /><i className="box-cap cap-max" style={{ left: `${item.max}%` }} /><em style={{ left: `${item.q1}%`, width: `${item.q3 - item.q1}%` }}><b style={{ left: `${(item.median - item.q1) / (item.q3 - item.q1) * 100}%` }} /></em></button><b>{Math.round(item.median * factor)}</b></div>)}</div>;
+  } else if (variant === "sankey") {
+    chart = <div className="sankey-plot">{sankeyPaths.map((path, index) => <i className={`sankey-path tone-${index % 3}`} key={index} style={{ left: path.left, top: path.top, width: path.width, transform: `rotate(${path.angle}deg)` }} />)}{sankeyNodes.map((item, index) => <button key={item.label} className={`tone-${item.tone} ${selected === index ? "selected" : ""}`} style={{ left: item.left, top: item.top }} onClick={() => setSelected(index)}><span>{item.label}</span><b>{Math.round(item.value * factor)}</b></button>)}</div>;
+  } else {
+    chart = <div className="pareto-plot"><div className="chart-grid-lines"><i /><i /><i /><i /></div><div className="pareto-bars">{paretoValues.map((value, index) => <button key={paretoLabels[index]} className={selected === index ? "selected" : ""} style={{ height: `${value * 2.55}%` }} onClick={() => setSelected(index)} aria-label={`${paretoLabels[index]} ${Math.round(value * factor)}건`}><span>{Math.round(value * factor)}</span><small>{paretoLabels[index]}</small></button>)}</div><div className="pareto-line">{paretoCumulative.map((value, index) => <i key={index} style={{ left: `${(index + .5) * 100 / paretoValues.length}%`, bottom: `${value}%` }}><span>{value}%</span></i>)}</div></div>;
+  }
+
+  return <div className={`advanced-chart extended-chart ${variant}`}>
+    <div className="advanced-chart-head"><div><strong>{mode === "실적" ? heading.value : heading.target}</strong><span>{heading.label} · {selected + 1}번 데이터 선택</span></div><div className="segment-control">{["실적", "목표"].map((item) => <button key={item} className={mode === item ? "active" : ""} onClick={() => { setMode(item); setSelected(0); }}>{item}</button>)}</div></div>
+    {chart}
+  </div>;
 }
 
 function customTableCellDefault(column: CustomTableColumn, rowIndex = 0): string | boolean {
@@ -1038,6 +1149,15 @@ function WidgetContent({ widget, onSettingsChange }: { widget: Widget; onSetting
       return <div className="donut-widget"><div className="donut" style={{ "--donut": `${value}%` } as CSSProperties}><div><strong>{value}%</strong><span>완료</span></div></div><div className="donut-legend"><span><i />완료 <b>{value}%</b></span><span><i />진행 <b>18%</b></span><span><i />대기 <b>8%</b></span></div></div>;
     case "gauge":
       return <div className="gauge-widget"><div className="gauge" style={{ "--gauge": `${value}%` } as CSSProperties}><div><strong>{value}</strong><span>/ 100</span></div></div><p>{caption}</p><span className="positive">목표 이상 · 안정적</span></div>;
+    case "horizontalBar":
+    case "waterfall":
+    case "bubble":
+    case "treemap":
+    case "candlestick":
+    case "boxPlot":
+    case "sankey":
+    case "pareto":
+      return <ExtendedChart variant={widget.type} />;
     case "board":
       return <BoardPreview />;
     case "editor":

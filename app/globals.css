@@ -1156,6 +1156,97 @@ select:focus-visible,
 .funnel-steps button.active { filter: brightness(1.18); transform: scale(1.025); border-color: var(--accent); }
 .funnel-steps button b { font-size: calc(max(12px, 8px) + var(--font-step)); }
 
+.extended-chart { min-width: 0; min-height: 220px; }
+.extended-chart > [class$="-plot"] { flex: 1; min-width: 0; min-height: 128px; }
+
+.horizontal-bar-plot { display: flex; flex-direction: column; justify-content: space-around; gap: 5px; }
+.horizontal-bar-plot button { min-width: 0; height: 28px; padding: 0; display: grid; grid-template-columns: minmax(52px, .55fr) minmax(70px, 3fr) 30px; align-items: center; gap: 7px; border: 0; background: transparent; color: var(--muted); cursor: pointer; text-align: left; }
+.horizontal-bar-plot button > span { overflow: hidden; font-size: calc(max(12px, 8px) + var(--font-step)); text-overflow: ellipsis; white-space: nowrap; }
+.horizontal-bar-plot button > i { height: 12px; overflow: hidden; border-radius: 4px; background: var(--panel); }
+.horizontal-bar-plot button > i > em { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .3s; }
+.horizontal-bar-plot button > b { color: var(--text); font-size: calc(max(12px, 8px) + var(--font-step)); text-align: right; }
+.horizontal-bar-plot button:hover,
+.horizontal-bar-plot button.selected { color: var(--text); transform: none; }
+.horizontal-bar-plot button.selected > i { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+
+.waterfall-plot { padding: 0 5px 20px; display: flex; align-items: stretch; gap: clamp(5px, 2cqw, 14px); border-bottom: 1px solid var(--line); }
+.waterfall-column { flex: 1; min-width: 0; position: relative; }
+.waterfall-column > button { position: absolute; left: 10%; width: 80%; min-height: 7px; padding: 0; border: 0; border-radius: 4px; background: var(--accent-2); color: white; cursor: pointer; transition: filter .15s, transform .15s; }
+.waterfall-column > button.down { background: #e9677c; }
+.waterfall-column > button.total { background: var(--accent); }
+.waterfall-column > button:hover,
+.waterfall-column > button.selected { filter: brightness(1.18); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); transform: none; }
+.waterfall-column > button span { position: absolute; left: 50%; top: 50%; font-size: calc(max(12px, 7px) + var(--font-step)); font-weight: 800; transform: translate(-50%, -50%); }
+.waterfall-column > small { position: absolute; left: 50%; bottom: -18px; max-width: 100%; overflow: hidden; color: var(--muted); font-size: calc(max(12px, 7px) + var(--font-step)); text-overflow: ellipsis; white-space: nowrap; transform: translateX(-50%); }
+
+.bubble-plot { position: relative; overflow: hidden; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.bubble-plot .chart-grid-lines { inset: 0; }
+.bubble-point { position: absolute; z-index: 2; min-width: 18px; min-height: 18px; max-width: 58px; max-height: 58px; padding: 0; display: grid; place-items: center; border: 2px solid var(--surface); border-radius: 50%; background: color-mix(in srgb, var(--accent) 76%, transparent); color: white; cursor: pointer; transform: translate(-50%, 50%); box-shadow: 0 4px 12px rgba(0,0,0,.16); }
+.bubble-point.tone-1 { background: color-mix(in srgb, var(--accent-2) 78%, transparent); }
+.bubble-point.tone-2 { background: color-mix(in srgb, var(--positive) 78%, transparent); }
+.bubble-point:hover,
+.bubble-point.selected { z-index: 3; border-color: var(--text); transform: translate(-50%, 50%) scale(1.12); }
+.bubble-point span { max-width: 64px; overflow: hidden; font-size: calc(max(12px, 7px) + var(--font-step)); font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+
+.treemap-plot { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(32px, 1fr)); gap: 4px; }
+.treemap-plot button { min-width: 0; min-height: 0; padding: 7px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius: 6px; background: color-mix(in srgb, var(--accent) 42%, var(--panel)); color: var(--text); text-align: left; cursor: pointer; }
+.treemap-plot button.tone-1 { background: color-mix(in srgb, var(--accent-2) 40%, var(--panel)); }
+.treemap-plot button.tone-2 { background: color-mix(in srgb, var(--positive) 38%, var(--panel)); }
+.treemap-plot button.tone-3 { background: var(--elevated); }
+.treemap-plot button:hover,
+.treemap-plot button.selected { border-color: var(--text); filter: brightness(1.1); transform: none; }
+.treemap-plot strong { max-width: 100%; overflow: hidden; font-size: calc(max(12px, 9px) + var(--font-step)); text-overflow: ellipsis; white-space: nowrap; }
+.treemap-plot span { margin-top: 2px; color: color-mix(in srgb, var(--text) 78%, transparent); font-size: calc(max(12px, 8px) + var(--font-step)); }
+
+.candle-plot { padding: 2px 8px 0; display: flex; align-items: stretch; justify-content: space-around; gap: clamp(6px, 2cqw, 18px); border-bottom: 1px solid var(--line); background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), color-mix(in srgb, var(--line) 55%, transparent) 25%); }
+.candle-plot button { flex: 1; min-width: 9px; max-width: 38px; height: 100%; padding: 0; position: relative; border: 0; background: transparent; cursor: pointer; }
+.candle-wick { position: absolute; left: 50%; width: 1px; background: var(--positive); transform: translateX(-50%); }
+.candle-body { position: absolute; left: 18%; width: 64%; min-height: 6px; border: 1px solid var(--positive); border-radius: 2px; background: color-mix(in srgb, var(--positive) 65%, var(--surface)); }
+.candle-plot button.falling .candle-wick { background: #ef7184; }
+.candle-plot button.falling .candle-body { border-color: #ef7184; background: color-mix(in srgb, #ef7184 68%, var(--surface)); }
+.candle-plot button > span { position: absolute; left: 50%; top: 2px; padding: 2px 4px; border-radius: 4px; background: var(--elevated); color: var(--text); font-size: calc(max(12px, 7px) + var(--font-step)); opacity: 0; transform: translateX(-50%); }
+.candle-plot button:hover > span,
+.candle-plot button.selected > span { z-index: 3; opacity: 1; }
+.candle-plot button.selected { border-radius: 4px; background: color-mix(in srgb, var(--accent) 8%, transparent); transform: none; }
+
+.boxplot-plot { display: flex; flex-direction: column; justify-content: space-around; gap: 6px; }
+.boxplot-row { min-width: 0; display: grid; grid-template-columns: minmax(52px, .6fr) minmax(110px, 3fr) 28px; align-items: center; gap: 7px; color: var(--muted); }
+.boxplot-row > span { overflow: hidden; font-size: calc(max(12px, 8px) + var(--font-step)); text-overflow: ellipsis; white-space: nowrap; }
+.boxplot-row > button { height: 25px; padding: 0; position: relative; border: 0; background: transparent; cursor: pointer; }
+.box-whisker { position: absolute; top: 50%; height: 1px; background: var(--muted); }
+.box-cap { position: absolute; top: 27%; width: 1px; height: 46%; background: var(--muted); }
+.boxplot-row button > em { position: absolute; top: 20%; height: 60%; border: 1px solid var(--accent); border-radius: 3px; background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
+.boxplot-row button > em > b { position: absolute; top: -1px; width: 2px; height: calc(100% + 2px); background: var(--accent-2); }
+.boxplot-row > b { color: var(--text); font-size: calc(max(12px, 8px) + var(--font-step)); text-align: right; }
+.boxplot-row.selected { color: var(--text); }
+.boxplot-row.selected > button { border-radius: 4px; background: color-mix(in srgb, var(--accent) 9%, transparent); transform: none; }
+
+.sankey-plot { position: relative; overflow: hidden; }
+.sankey-path { position: absolute; z-index: 1; height: 7px; border-radius: 8px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 62%, transparent), color-mix(in srgb, var(--accent-2) 38%, transparent)); transform-origin: left center; opacity: .7; }
+.sankey-path.tone-1 { height: 4px; opacity: .48; }
+.sankey-path.tone-2 { background: linear-gradient(90deg, color-mix(in srgb, var(--positive) 60%, transparent), color-mix(in srgb, var(--accent) 34%, transparent)); }
+.sankey-plot button { position: absolute; z-index: 2; width: 22%; min-width: 58px; max-width: 92px; height: 36px; padding: 0 7px; display: flex; align-items: center; justify-content: space-between; gap: 5px; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 6px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.sankey-plot button.tone-1 { border-color: color-mix(in srgb, var(--accent-2) 48%, var(--line)); }
+.sankey-plot button.tone-2 { border-color: color-mix(in srgb, var(--positive) 48%, var(--line)); }
+.sankey-plot button:hover,
+.sankey-plot button.selected { border-color: var(--text); color: var(--text); box-shadow: 0 5px 14px rgba(0,0,0,.14); transform: translateY(-1px); }
+.sankey-plot button span { overflow: hidden; font-size: calc(max(12px, 8px) + var(--font-step)); text-overflow: ellipsis; white-space: nowrap; }
+.sankey-plot button b { font-size: calc(max(12px, 8px) + var(--font-step)); }
+
+.pareto-plot { position: relative; overflow: hidden; }
+.pareto-plot .chart-grid-lines { inset: 0 0 18px; }
+.pareto-bars { position: absolute; inset: 6px 4px 18px; display: flex; align-items: end; justify-content: space-around; gap: clamp(4px, 1.4cqw, 12px); }
+.pareto-bars button { flex: 1; min-width: 8px; max-width: 46px; padding: 0; position: relative; border: 0; border-radius: 4px 4px 1px 1px; background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 24%, transparent)); cursor: pointer; }
+.pareto-bars button:hover,
+.pareto-bars button.selected { filter: brightness(1.15); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent); transform: none; }
+.pareto-bars button > span { position: absolute; left: 50%; top: -17px; color: var(--text); font-size: calc(max(12px, 7px) + var(--font-step)); transform: translateX(-50%); }
+.pareto-bars button > small { position: absolute; left: 50%; bottom: -17px; color: var(--muted); font-size: calc(max(12px, 7px) + var(--font-step)); white-space: nowrap; transform: translateX(-50%); }
+.pareto-line { position: absolute; z-index: 2; inset: 6px 4px 18px; pointer-events: none; }
+.pareto-line > i { position: absolute; width: 8px; height: 8px; border: 2px solid var(--surface); border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 0 1px var(--accent-2); transform: translate(-50%, 50%); }
+.pareto-line > i::before { content: ""; position: absolute; right: 5px; top: 2px; width: clamp(24px, 10cqw, 82px); height: 2px; background: var(--accent-2); transform: rotate(-12deg); transform-origin: right center; }
+.pareto-line > i:first-child::before { display: none; }
+.pareto-line > i > span { position: absolute; left: 50%; bottom: 8px; color: var(--accent-2); font-size: calc(max(12px, 6px) + var(--font-step)); white-space: nowrap; transform: translateX(-50%); }
+
 .custom-table-widget { min-height: 220px; }
 .custom-table-toolbar,
 .custom-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -1464,6 +1555,12 @@ select:focus-visible,
   .funnel-chart { grid-template-columns: 1fr; gap: 7px; overflow: auto; }
   .funnel-summary { padding: 0 0 7px; border-right: 0; border-bottom: 1px solid var(--line); }
   .funnel-steps { min-height: 145px; }
+  .horizontal-bar-plot button { grid-template-columns: minmax(42px, .55fr) minmax(54px, 2fr) 25px; gap: 4px; }
+  .boxplot-row { grid-template-columns: minmax(42px, .55fr) minmax(76px, 2fr) 24px; gap: 4px; }
+  .sankey-plot button { width: 24%; min-width: 48px; height: 32px; padding-inline: 5px; }
+  .sankey-plot button b { display: none; }
+  .waterfall-plot { gap: 3px; }
+  .waterfall-column > button { left: 5%; width: 90%; }
   .donut-widget { align-items: center; flex-direction: column; overflow: auto; }
   .donut-legend { width: 100%; }
   .kanban-board { grid-template-columns: 1fr; overflow-y: auto; }
@@ -1499,7 +1596,11 @@ select:focus-visible,
   .mini-chart,
   .line-plot,
   .stacked-plot,
-  .scatter-plot { min-height: 42px; }
+  .scatter-plot,
+  .extended-chart > [class$="-plot"] { min-height: 42px; }
+  .waterfall-plot { padding-bottom: 0; }
+  .waterfall-column > small,
+  .pareto-bars button > small { display: none; }
   .chart-legend { margin-top: 3px; }
   .chart-legend button { height: 20px; }
   .hero-widget { padding-block: 8px; }
