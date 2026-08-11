@@ -1057,6 +1057,7 @@ export default function Home() {
   const pointerDrag = useRef<{ id: string; pointerId: number } | null>(null);
   const dropTargetRef = useRef<DropTarget | null>(null);
   const loadPopoverRef = useRef<HTMLDivElement | null>(null);
+  const themePopoverRef = useRef<HTMLDivElement | null>(null);
 
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
   const iconPickerPage = pages.find((page) => page.id === iconPickerPageId);
@@ -1151,6 +1152,15 @@ export default function Home() {
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
   }, [loadOpen]);
+
+  useEffect(() => {
+    if (!themeOpen) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!themePopoverRef.current?.contains(event.target as Node)) setThemeOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [themeOpen]);
 
   useEffect(() => {
     if (!iconPickerPageId) return;
@@ -1352,7 +1362,7 @@ export default function Home() {
             {loadOpen && <div className="load-popover popover-panel"><div className="popover-title"><span>SAVED LOCALLY</span><strong>저장된 레이아웃</strong></div>{savedLayouts.length === 0 ? <div className="empty-saves">아직 저장된 레이아웃이 없습니다.</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">L</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 삭제`}>×</button></div>)}</div>}
           </div>
           <button className="save-button" onClick={saveLayout}>저장 <span>⌘S</span></button>
-          <div className="popover-wrap">
+          <div className="popover-wrap" ref={themePopoverRef}>
             <button className="theme-button" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{THEMES.length}</span></button>
             {themeOpen && <div className="theme-popover popover-panel"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 {THEMES.length}가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div></div>}
           </div>
