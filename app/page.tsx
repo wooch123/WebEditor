@@ -818,14 +818,6 @@ function CustomTablePreview({ settings, onColumnsChange }: { settings: Record<st
     next.splice(to, 0, moved);
     commitColumns(next);
   };
-  const shiftColumn = (id: string, direction: -1 | 1) => {
-    const index = columns.findIndex((column) => column.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= columns.length) return;
-    const next = [...columns];
-    [next[index], next[target]] = [next[target], next[index]];
-    commitColumns(next);
-  };
   const startColumnResize = (event: React.PointerEvent<HTMLButtonElement>, id: string) => {
     event.preventDefault();
     event.stopPropagation();
@@ -864,7 +856,7 @@ function CustomTablePreview({ settings, onColumnsChange }: { settings: Record<st
       <div className="custom-table-toolbar"><span>{columns.length}개 열 · 머리글 순서 및 너비 조절</span><button onClick={addRow}>＋ 행 추가</button></div>
       <div className="custom-table-scroll">
         <div className="custom-table-row custom-table-head" style={gridStyle}>
-          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
+          {columns.map((column) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
           <span />
         </div>
         {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.type}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}

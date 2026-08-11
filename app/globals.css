@@ -1496,10 +1496,6 @@ select:focus-visible,
 .custom-table-head > div { padding: 0 10px 0 7px; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 5px; border-right: 1px solid var(--line); color: var(--muted); font-size: calc(max(12px, 7px) + var(--font-step)); font-weight: 750; cursor: grab; }
 .custom-table-head > div:active { cursor: grabbing; }
 .custom-table-head > div > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.column-shift { display: flex; gap: 2px; }
-.page-sidebar nav .column-shift button,
-.column-shift button { width: 17px; height: 17px; padding: 0; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--muted); font-size: calc(max(12px, 11px) + var(--font-step)); cursor: pointer; }
-.column-shift button:disabled { opacity: .25; cursor: default; }
 .custom-table-head .column-resizer { position: absolute; z-index: 3; top: 0; right: -5px; width: 10px; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: col-resize; touch-action: none; }
 .custom-table-head .column-resizer::after { content: ""; position: absolute; top: 6px; bottom: 6px; left: 4px; width: 2px; border-radius: 2px; background: color-mix(in srgb, var(--accent) 32%, var(--line)); transition: background .15s, box-shadow .15s; }
 .custom-table-head .column-resizer:hover::after,
