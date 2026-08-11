@@ -106,6 +106,11 @@ const THEMES: Theme[] = [
   { id: "velvet-plum", name: "Velvet Plum", mode: "dark", isNew: true, bg: "#120c13", sidebar: "#1a111c", panel: "#231726", surface: "#2e1e32", elevated: "#3c2842", line: "#513557", text: "#fff2ff", muted: "#aa8faf", accent: "#d85ad4", accent2: "#ff7c9e", positive: "#5bd5a1" },
   { id: "steel-orange", name: "Steel Orange", mode: "dark", isNew: true, bg: "#101214", sidebar: "#161a1e", panel: "#1d2329", surface: "#262e35", elevated: "#303a43", line: "#3e4b55", text: "#f5f8fa", muted: "#929fa9", accent: "#ff7a45", accent2: "#49b9ff", positive: "#50d29a" },
   { id: "polar-night", name: "Polar Night", mode: "dark", isNew: true, bg: "#071014", sidebar: "#0b171d", panel: "#102129", surface: "#172c35", elevated: "#1f3944", line: "#2a4a56", text: "#f0fcff", muted: "#86a8b3", accent: "#65d8ff", accent2: "#a2f06c", positive: "#55dba3" },
+  { id: "graphite-mono", name: "Graphite Mono", mode: "dark", isNew: true, bg: "#0e0f11", sidebar: "#141518", panel: "#1b1d21", surface: "#23262b", elevated: "#2c3036", line: "#3a3f47", text: "#f3f4f6", muted: "#9ca2ab", accent: "#d0d4da", accent2: "#8e959f", positive: "#68c99a" },
+  { id: "smoke-chrome", name: "Smoke Chrome", mode: "dark", isNew: true, bg: "#111315", sidebar: "#171a1d", panel: "#1e2226", surface: "#272c31", elevated: "#31373d", line: "#40474f", text: "#f1f3f5", muted: "#98a0a8", accent: "#bcc4cc", accent2: "#7d8791", positive: "#66c696" },
+  { id: "charcoal-stone", name: "Charcoal Stone", mode: "dark", isNew: true, bg: "#121110", sidebar: "#191817", panel: "#211f1d", surface: "#2a2825", elevated: "#35322f", line: "#45413d", text: "#f5f2ee", muted: "#a49e97", accent: "#cec8c0", accent2: "#8f8880", positive: "#70c493" },
+  { id: "steel-slate", name: "Steel Slate", mode: "dark", isNew: true, bg: "#0f1215", sidebar: "#15191d", panel: "#1c2228", surface: "#252c33", elevated: "#2f3841", line: "#3e4954", text: "#f1f4f6", muted: "#96a1aa", accent: "#c2cad1", accent2: "#7c8995", positive: "#64c89a" },
+  { id: "iron-noir", name: "Iron Noir", mode: "dark", isNew: true, bg: "#0a0b0c", sidebar: "#101214", panel: "#17191c", surface: "#1f2226", elevated: "#292d32", line: "#373c43", text: "#f7f7f8", muted: "#92979e", accent: "#dadde1", accent2: "#828891", positive: "#60c794" },
   { id: "cloud-blue", name: "Cloud Blue", mode: "light", bg: "#edf3fa", sidebar: "#ffffff", panel: "#f7faff", surface: "#ffffff", elevated: "#e8f0fa", line: "#d7e1ed", text: "#1a2634", muted: "#708094", accent: "#3978f6", accent2: "#00a9a5", positive: "#209b68" },
   { id: "paper-violet", name: "Paper Violet", mode: "light", bg: "#f4f1f8", sidebar: "#fffefe", panel: "#faf8fd", surface: "#ffffff", elevated: "#eee8f5", line: "#ded5e8", text: "#2b2334", muted: "#7b6f88", accent: "#8055c7", accent2: "#df5f8b", positive: "#269669" },
   { id: "sage-studio", name: "Sage Studio", mode: "light", bg: "#edf2ed", sidebar: "#f9fcf8", panel: "#f4f8f3", surface: "#ffffff", elevated: "#e4ece2", line: "#d3ded1", text: "#243127", muted: "#6f7e72", accent: "#4f8f65", accent2: "#cf8c45", positive: "#2d9662" },
@@ -116,6 +121,11 @@ const THEMES: Theme[] = [
   { id: "lemon-air", name: "Lemon Air", mode: "light", bg: "#f7f6ea", sidebar: "#fffffa", panel: "#fbfbf3", surface: "#ffffff", elevated: "#eeeeD9", line: "#dfdfc9", text: "#303126", muted: "#7b7c68", accent: "#8a8f24", accent2: "#e3883c", positive: "#3a9163" },
   { id: "lavender-air", name: "Lavender Air", mode: "light", bg: "#f3f2fb", sidebar: "#fdfcff", panel: "#f8f7fe", surface: "#ffffff", elevated: "#e9e7f6", line: "#d9d6ec", text: "#29263a", muted: "#747087", accent: "#6d63d9", accent2: "#d35e9b", positive: "#36936b" },
   { id: "aqua-paper", name: "Aqua Paper", mode: "light", bg: "#eef7f8", sidebar: "#fbffff", panel: "#f6fbfc", surface: "#ffffff", elevated: "#e0eff1", line: "#cde1e4", text: "#203235", muted: "#6d8185", accent: "#168da1", accent2: "#705ec8", positive: "#2d9165" },
+  { id: "pearl-gray", name: "Pearl Gray", mode: "light", isNew: true, bg: "#eef0f2", sidebar: "#fafbfc", panel: "#f5f6f7", surface: "#ffffff", elevated: "#e3e6e9", line: "#d0d4d8", text: "#25282c", muted: "#727980", accent: "#4f565e", accent2: "#8b9299", positive: "#328864" },
+  { id: "fog-office", name: "Fog Office", mode: "light", isNew: true, bg: "#f1f2f3", sidebar: "#ffffff", panel: "#f7f7f8", surface: "#ffffff", elevated: "#e7e8ea", line: "#d5d7da", text: "#292b2e", muted: "#767a80", accent: "#5b6066", accent2: "#93989e", positive: "#348762" },
+  { id: "stone-paper", name: "Stone Paper", mode: "light", isNew: true, bg: "#f0efed", sidebar: "#fbfaf8", panel: "#f6f5f3", surface: "#ffffff", elevated: "#e5e2de", line: "#d3cfca", text: "#302e2b", muted: "#7c7771", accent: "#5f5a55", accent2: "#99928a", positive: "#3b8864" },
+  { id: "platinum-light", name: "Platinum Light", mode: "light", isNew: true, bg: "#eceff1", sidebar: "#f9fafb", panel: "#f4f6f7", surface: "#ffffff", elevated: "#dfe3e6", line: "#ccd2d6", text: "#22272b", muted: "#6f7880", accent: "#48525b", accent2: "#87919a", positive: "#308661" },
+  { id: "concrete-day", name: "Concrete Day", mode: "light", isNew: true, bg: "#e9eaeb", sidebar: "#f7f7f7", panel: "#f1f2f2", surface: "#fcfcfc", elevated: "#dcdee0", line: "#c9cccf", text: "#27292c", muted: "#73777b", accent: "#50555a", accent2: "#898f95", positive: "#338762" },
 ];
 
 const PAGE_ICON_GROUPS = [
@@ -194,6 +204,82 @@ const LABELS: Record<WidgetType, string> = Object.fromEntries(
 
 const WIDTH_LABELS: Record<WidgetWidth, string> = { third: "1/3", half: "1/2", full: "전체" };
 
+type CustomTableFieldType = "text" | "checkbox" | "date" | "select" | "radio";
+type CustomTableColumn = {
+  id: string;
+  label: string;
+  type: CustomTableFieldType;
+  options: string[];
+  defaultValue: string;
+  width: number;
+};
+type CustomTableRow = { id: string; values: Record<string, string | boolean> };
+
+const CUSTOM_TABLE_TYPE_LABELS: Record<CustomTableFieldType, string> = {
+  text: "텍스트 입력",
+  checkbox: "체크박스",
+  date: "날짜 선택",
+  select: "콤보박스",
+  radio: "라디오 버튼",
+};
+const CUSTOM_TABLE_FIELD_TYPES = Object.keys(CUSTOM_TABLE_TYPE_LABELS) as CustomTableFieldType[];
+const DEFAULT_CUSTOM_TABLE_COLUMNS: CustomTableColumn[] = [
+  { id: "column-task", label: "업무명", type: "text", options: [], defaultValue: "새 업무", width: 200 },
+  { id: "column-check", label: "완료", type: "checkbox", options: [], defaultValue: "false", width: 112 },
+  { id: "column-date", label: "마감일", type: "date", options: [], defaultValue: "2026-08-18", width: 145 },
+  { id: "column-status", label: "상태", type: "select", options: ["대기", "진행", "검토", "완료"], defaultValue: "진행", width: 145 },
+  { id: "column-priority", label: "우선순위", type: "radio", options: ["일반", "높음"], defaultValue: "일반", width: 190 },
+];
+
+function cleanTableOptions(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.map((option) => String(option).trim()).filter(Boolean).slice(0, 12);
+}
+
+function legacyCustomTableColumns(settings: Record<string, string>): CustomTableColumn[] {
+  const comboOptions = (settings.comboOptions || "대기,진행,검토,완료").split(",").map((value) => value.trim()).filter(Boolean);
+  const radioOptions = (settings.radioOptions || "일반,높음").split(",").map((value) => value.trim()).filter(Boolean);
+  return [
+    { ...DEFAULT_CUSTOM_TABLE_COLUMNS[0], defaultValue: settings.textDefault || "새 업무" },
+    { ...DEFAULT_CUSTOM_TABLE_COLUMNS[1] },
+    { ...DEFAULT_CUSTOM_TABLE_COLUMNS[2] },
+    { ...DEFAULT_CUSTOM_TABLE_COLUMNS[3], options: comboOptions, defaultValue: comboOptions.includes(settings.comboDefault) ? settings.comboDefault : comboOptions[0] || "" },
+    { ...DEFAULT_CUSTOM_TABLE_COLUMNS[4], options: radioOptions, defaultValue: radioOptions.includes(settings.radioDefault) ? settings.radioDefault : radioOptions[0] || "" },
+  ];
+}
+
+function parseCustomTableColumns(settings: Record<string, string>): CustomTableColumn[] {
+  if (!settings.tableColumns) return legacyCustomTableColumns(settings);
+  try {
+    const source: unknown = JSON.parse(settings.tableColumns);
+    if (!Array.isArray(source) || source.length === 0) return legacyCustomTableColumns(settings);
+    const usedIds = new Set<string>();
+    return source.slice(0, 12).map((item, index) => {
+      const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      const requestedId = typeof record.id === "string" && record.id.trim() ? record.id.trim() : `column-${index + 1}`;
+      const id = usedIds.has(requestedId) ? `${requestedId}-${index + 1}` : requestedId;
+      usedIds.add(id);
+      const type = CUSTOM_TABLE_FIELD_TYPES.includes(record.type as CustomTableFieldType) ? record.type as CustomTableFieldType : "text";
+      const options = type === "select" || type === "radio" ? cleanTableOptions(record.options) : [];
+      const rawWidth = Number(record.width);
+      return {
+        id,
+        label: typeof record.label === "string" && record.label.trim() ? record.label.slice(0, 30) : `열 ${index + 1}`,
+        type,
+        options,
+        defaultValue: typeof record.defaultValue === "string" ? record.defaultValue : type === "checkbox" ? "false" : options[0] || "",
+        width: Number.isFinite(rawWidth) ? Math.max(90, Math.min(360, Math.round(rawWidth))) : 150,
+      };
+    });
+  } catch {
+    return legacyCustomTableColumns(settings);
+  }
+}
+
+function serializeCustomTableColumns(columns: CustomTableColumn[]) {
+  return JSON.stringify(columns);
+}
+
 function newId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -226,7 +312,7 @@ function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
     live: { caption: "팀 활동을 실시간으로 확인합니다." },
     assign: { caption: "업무 담당자와 마감일" },
     poll: { caption: "현재 36명 참여", question: "다음 팀 워크숍은 언제가 좋을까요?", option1: "8월 21일 금요일", option2: "8월 28일 금요일", option3: "9월 4일 금요일" },
-    customTable: { caption: "열을 끌어 순서를 바꾸고 행을 추가하세요.", comboOptions: "대기,진행,검토,완료", comboDefault: "진행", radioOptions: "일반,높음", radioDefault: "일반", textDefault: "새 업무" },
+    customTable: { caption: "설정에서 모든 열을 자유롭게 구성하고 행을 추가하세요.", tableColumns: serializeCustomTableColumns(DEFAULT_CUSTOM_TABLE_COLUMNS) },
     kanban: { caption: "카드를 끌어 단계별로 이동하세요." },
     gantt: { caption: "업무 막대를 끌어 일정을 이동하고 기간을 조절하세요." },
   };
@@ -401,90 +487,161 @@ function FunnelChart() {
   );
 }
 
-type CustomTableRow = { id: string; title: string; checked: boolean; date: string; status: string; priority: string };
-type CustomTableColumn = { id: "text" | "check" | "date" | "combo" | "radio"; label: string };
+function customTableCellDefault(column: CustomTableColumn, rowIndex = 0): string | boolean {
+  if (column.type === "checkbox") return column.defaultValue === "true";
+  if (column.type === "select" || column.type === "radio") return column.options.includes(column.defaultValue) ? column.defaultValue : column.options[0] || "";
+  if (column.type === "text" && rowIndex > 0) return `${column.defaultValue || "새 항목"} ${rowIndex + 1}`;
+  return column.defaultValue;
+}
 
-function CustomTablePreview({ settings }: { settings: Record<string, string> }) {
-  const comboOptions = (settings.comboOptions || "대기,진행,검토,완료").split(",").map((value) => value.trim()).filter(Boolean);
-  const radioOptions = (settings.radioOptions || "일반,높음").split(",").map((value) => value.trim()).filter(Boolean);
-  const defaultStatus = comboOptions.includes(settings.comboDefault) ? settings.comboDefault : comboOptions[0] || "진행";
-  const defaultPriority = radioOptions.includes(settings.radioDefault) ? settings.radioDefault : radioOptions[0] || "일반";
-  const defaultText = settings.textDefault || "새 업무";
-  const [columns, setColumns] = useState<CustomTableColumn[]>([
-    { id: "text", label: "텍스트" },
-    { id: "check", label: "체크박스" },
-    { id: "date", label: "날짜" },
-    { id: "combo", label: "상태" },
-    { id: "radio", label: "우선순위" },
-  ]);
-  const [rows, setRows] = useState<CustomTableRow[]>([
-    { id: "table-row-1", title: "요구사항 검토", checked: true, date: "2026-08-12", status: defaultStatus, priority: radioOptions[1] || defaultPriority },
-    { id: "table-row-2", title: "화면 설계", checked: false, date: "2026-08-18", status: defaultStatus, priority: defaultPriority },
-  ]);
-  const [draggedColumn, setDraggedColumn] = useState<CustomTableColumn["id"] | null>(null);
-  const [columnWidths, setColumnWidths] = useState<Record<CustomTableColumn["id"], number>>({ text: 180, check: 112, date: 140, combo: 140, radio: 180 });
-  const columnResize = useRef<{ id: CustomTableColumn["id"]; pointerId: number; startX: number; startWidth: number } | null>(null);
-
-  const updateRow = (id: string, patch: Partial<CustomTableRow>) => setRows((current) => current.map((row) => row.id === id ? { ...row, ...patch } : row));
-  const moveColumn = (fromId: CustomTableColumn["id"], toId: CustomTableColumn["id"]) => {
-    if (fromId === toId) return;
-    setColumns((current) => {
-      const next = [...current];
-      const from = next.findIndex((column) => column.id === fromId);
-      const to = next.findIndex((column) => column.id === toId);
-      if (from < 0 || to < 0) return current;
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
+function createCustomTableRow(columns: CustomTableColumn[], rowIndex: number): CustomTableRow {
+  return {
+    id: newId("table-row"),
+    values: Object.fromEntries(columns.map((column) => [column.id, customTableCellDefault(column, rowIndex)])),
   };
-  const shiftColumn = (id: CustomTableColumn["id"], direction: -1 | 1) => setColumns((current) => {
-    const index = current.findIndex((column) => column.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= current.length) return current;
-    const next = [...current];
-    [next[index], next[target]] = [next[target], next[index]];
-    return next;
+}
+
+function CustomTablePreview({ settings, onColumnsChange }: { settings: Record<string, string>; onColumnsChange?: (columns: CustomTableColumn[]) => void }) {
+  const [columns, setColumns] = useState<CustomTableColumn[]>(() => parseCustomTableColumns(settings));
+  const [rows, setRows] = useState<CustomTableRow[]>(() => {
+    const initialColumns = parseCustomTableColumns(settings);
+    return [createCustomTableRow(initialColumns, 0), createCustomTableRow(initialColumns, 1)];
   });
-  const startColumnResize = (event: React.PointerEvent<HTMLButtonElement>, id: CustomTableColumn["id"]) => {
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => Object.fromEntries(parseCustomTableColumns(settings).map((column) => [column.id, column.width])));
+  const columnResize = useRef<{ id: string; pointerId: number; startX: number; startWidth: number; latestWidth: number } | null>(null);
+
+  useEffect(() => {
+    const nextColumns = parseCustomTableColumns(settings);
+    setColumns(nextColumns);
+    setColumnWidths(Object.fromEntries(nextColumns.map((column) => [column.id, column.width])));
+    setRows((current) => current.map((row, rowIndex) => ({
+      ...row,
+      values: Object.fromEntries(nextColumns.map((column) => [column.id, row.values[column.id] ?? customTableCellDefault(column, rowIndex)])),
+    })));
+  }, [settings.tableColumns, settings.comboOptions, settings.comboDefault, settings.radioOptions, settings.radioDefault, settings.textDefault]);
+
+  const commitColumns = (next: CustomTableColumn[]) => {
+    setColumns(next);
+    onColumnsChange?.(next);
+  };
+  const updateCell = (rowId: string, columnId: string, value: string | boolean) => setRows((current) => current.map((row) => row.id === rowId ? { ...row, values: { ...row.values, [columnId]: value } } : row));
+  const moveColumn = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const next = [...columns];
+    const from = next.findIndex((column) => column.id === fromId);
+    const to = next.findIndex((column) => column.id === toId);
+    if (from < 0 || to < 0) return;
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    commitColumns(next);
+  };
+  const shiftColumn = (id: string, direction: -1 | 1) => {
+    const index = columns.findIndex((column) => column.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= columns.length) return;
+    const next = [...columns];
+    [next[index], next[target]] = [next[target], next[index]];
+    commitColumns(next);
+  };
+  const startColumnResize = (event: React.PointerEvent<HTMLButtonElement>, id: string) => {
     event.preventDefault();
     event.stopPropagation();
-    columnResize.current = { id, pointerId: event.pointerId, startX: event.clientX, startWidth: columnWidths[id] };
+    const startWidth = columnWidths[id] || 150;
+    columnResize.current = { id, pointerId: event.pointerId, startX: event.clientX, startWidth, latestWidth: startWidth };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
   const trackColumnResize = (event: React.PointerEvent<HTMLButtonElement>) => {
     const active = columnResize.current;
     if (!active || active.pointerId !== event.pointerId) return;
-    const width = Math.max(90, Math.min(360, active.startWidth + event.clientX - active.startX));
-    setColumnWidths((current) => ({ ...current, [active.id]: Math.round(width) }));
+    const width = Math.round(Math.max(90, Math.min(360, active.startWidth + event.clientX - active.startX)));
+    active.latestWidth = width;
+    setColumnWidths((current) => ({ ...current, [active.id]: width }));
   };
   const finishColumnResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const active = columnResize.current;
+    if (active && active.pointerId === event.pointerId) commitColumns(columns.map((column) => column.id === active.id ? { ...column, width: active.latestWidth } : column));
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     columnResize.current = null;
   };
-  const addRow = () => setRows((current) => [...current, { id: newId("table-row"), title: `${defaultText} ${current.length + 1}`, checked: false, date: new Date().toISOString().slice(0, 10), status: defaultStatus, priority: defaultPriority }]);
-  const gridStyle = { gridTemplateColumns: `${columns.map((column) => `minmax(${columnWidths[column.id]}px, ${columnWidths[column.id]}fr)`).join(" ")} 30px` };
+  const addRow = () => setRows((current) => [...current, createCustomTableRow(columns, current.length)]);
+  const totalWidth = columns.reduce((sum, column) => sum + (columnWidths[column.id] || column.width), 30);
+  const gridStyle = { gridTemplateColumns: `${columns.map((column) => `${columnWidths[column.id] || column.width}px`).join(" ")} 30px`, minWidth: `${totalWidth}px` } as CSSProperties;
 
   const renderCell = (column: CustomTableColumn, row: CustomTableRow) => {
-    if (column.id === "text") return <input type="text" value={row.title} onChange={(event) => updateRow(row.id, { title: event.target.value })} aria-label="텍스트 입력" />;
-    if (column.id === "check") return <label className="table-check"><input type="checkbox" checked={row.checked} onChange={(event) => updateRow(row.id, { checked: event.target.checked })} /><span>{row.checked ? "완료" : "대기"}</span></label>;
-    if (column.id === "date") return <input type="date" value={row.date} onChange={(event) => updateRow(row.id, { date: event.target.value })} aria-label="날짜 선택" />;
-    if (column.id === "combo") return <select value={row.status} onChange={(event) => updateRow(row.id, { status: event.target.value })} aria-label="상태 선택">{comboOptions.map((option) => <option key={option}>{option}</option>)}</select>;
-    return <div className="table-radio">{radioOptions.map((option) => <label key={option}><input type="radio" name={`priority-${row.id}`} checked={row.priority === option} onChange={() => updateRow(row.id, { priority: option })} />{option}</label>)}</div>;
+    const value = row.values[column.id];
+    if (column.type === "text") return <input type="text" value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${column.label} 텍스트 입력`} />;
+    if (column.type === "checkbox") return <label className="table-check"><input type="checkbox" checked={Boolean(value)} onChange={(event) => updateCell(row.id, column.id, event.target.checked)} /><span>{value ? "선택" : "미선택"}</span></label>;
+    if (column.type === "date") return <input type="date" value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${column.label} 날짜 선택`} />;
+    if (column.type === "select") return <select value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${column.label} 선택`}>{column.options.length === 0 && <option value="">옵션 없음</option>}{column.options.map((option) => <option key={option}>{option}</option>)}</select>;
+    return <div className="table-radio">{column.options.length === 0 ? <small>옵션을 설정하세요</small> : column.options.map((option) => <label key={option}><input type="radio" name={`${column.id}-${row.id}`} checked={value === option} onChange={() => updateCell(row.id, column.id, option)} />{option}</label>)}</div>;
   };
 
   return (
     <div className="custom-table-widget">
-      <div className="custom-table-toolbar"><span>머리글은 순서 변경 · 경계선은 너비 조절</span><button onClick={addRow}>＋ 행 추가</button></div>
+      <div className="custom-table-toolbar"><span>{columns.length}개 열 · 머리글 순서 및 너비 조절</span><button onClick={addRow}>＋ 행 추가</button></div>
       <div className="custom-table-scroll">
         <div className="custom-table-row custom-table-head" style={gridStyle}>
-          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}<small>{columnWidths[column.id]}px</small></span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
+          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}<small>{CUSTOM_TABLE_TYPE_LABELS[column.type]} · {columnWidths[column.id] || column.width}px</small></span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
           <span />
         </div>
-        {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.id}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}
+        {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.type}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}
       </div>
-      <div className="custom-table-footer"><span>{rows.length}개 행</span><button onClick={addRow}>＋ 새 행 추가</button></div>
+      <div className="custom-table-footer"><span>{rows.length}개 행 · 열 세부 설정은 우측 상단 ⚙</span><button onClick={addRow}>＋ 새 행 추가</button></div>
     </div>
+  );
+}
+
+function CustomTableOptionsInput({ column, onCommit }: { column: CustomTableColumn; onCommit: (options: string[]) => void }) {
+  const normalizedOptions = column.options.join(", ");
+  const [value, setValue] = useState(normalizedOptions);
+  useEffect(() => setValue(normalizedOptions), [normalizedOptions]);
+  const commit = () => onCommit(value.split(",").map((option) => option.trim()).filter(Boolean).slice(0, 12));
+  return <input value={value} onChange={(event) => setValue(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />;
+}
+
+function CustomTableColumnDesigner({ settings, onChange }: { settings: Record<string, string>; onChange: (columns: CustomTableColumn[]) => void }) {
+  const columns = parseCustomTableColumns(settings);
+  const updateColumn = (id: string, patch: Partial<CustomTableColumn>) => onChange(columns.map((column) => column.id === id ? { ...column, ...patch } : column));
+  const moveColumn = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= columns.length) return;
+    const next = [...columns];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+  const changeType = (column: CustomTableColumn, type: CustomTableFieldType) => {
+    const options = type === "select" || type === "radio" ? (column.options.length ? column.options : type === "select" ? ["옵션 1", "옵션 2"] : ["예", "아니오"]) : [];
+    const defaultValue = type === "checkbox" ? "false" : type === "date" ? new Date().toISOString().slice(0, 10) : type === "select" || type === "radio" ? options[0] || "" : column.type === "text" ? column.defaultValue : "";
+    updateColumn(column.id, { type, options, defaultValue });
+  };
+  const addColumn = () => {
+    if (columns.length >= 12) return;
+    onChange([...columns, { id: newId("column"), label: `새 열 ${columns.length + 1}`, type: "text", options: [], defaultValue: "", width: 150 }]);
+  };
+
+  return (
+    <section className="table-column-designer">
+      <div className="table-column-designer-head"><div><strong>열 설계</strong><span>{columns.length}/12 · 모든 항목 개별 설정</span></div><button type="button" onClick={addColumn} disabled={columns.length >= 12}>＋ 열 추가</button></div>
+      <div className="table-column-list">
+        {columns.map((column, index) => (
+          <article className="table-column-config" key={column.id}>
+            <div className="table-column-config-top"><strong>열 {index + 1}</strong><div><button type="button" disabled={index === 0} onClick={() => moveColumn(index, -1)} aria-label={`${column.label} 위로 이동`}>↑</button><button type="button" disabled={index === columns.length - 1} onClick={() => moveColumn(index, 1)} aria-label={`${column.label} 아래로 이동`}>↓</button><button type="button" className="danger" disabled={columns.length === 1} onClick={() => onChange(columns.filter((item) => item.id !== column.id))} aria-label={`${column.label} 열 삭제`}>×</button></div></div>
+            <label>열 이름<input value={column.label} maxLength={30} onChange={(event) => updateColumn(column.id, { label: event.target.value })} /></label>
+            <div className="table-column-config-grid">
+              <label>입력 유형<select value={column.type} onChange={(event) => changeType(column, event.target.value as CustomTableFieldType)}>{CUSTOM_TABLE_FIELD_TYPES.map((type) => <option value={type} key={type}>{CUSTOM_TABLE_TYPE_LABELS[type]}</option>)}</select></label>
+              <label>열 너비<input type="number" min="90" max="360" step="5" value={column.width} onChange={(event) => updateColumn(column.id, { width: Math.max(90, Math.min(360, Number(event.target.value) || 90)) })} /></label>
+            </div>
+            {(column.type === "select" || column.type === "radio") && <label>선택 값 · 쉼표로 구분<CustomTableOptionsInput column={column} onCommit={(options) => updateColumn(column.id, { options, defaultValue: options.includes(column.defaultValue) ? column.defaultValue : options[0] || "" })} /></label>}
+            <label>새 행 초기값
+              {column.type === "checkbox" ? <select value={column.defaultValue === "true" ? "true" : "false"} onChange={(event) => updateColumn(column.id, { defaultValue: event.target.value })}><option value="false">미선택</option><option value="true">선택</option></select>
+                : column.type === "select" || column.type === "radio" ? <select value={column.options.includes(column.defaultValue) ? column.defaultValue : column.options[0] || ""} disabled={column.options.length === 0} onChange={(event) => updateColumn(column.id, { defaultValue: event.target.value })}>{column.options.length === 0 && <option value="">선택 값 없음</option>}{column.options.map((option) => <option key={option}>{option}</option>)}</select>
+                  : <input type={column.type === "date" ? "date" : "text"} value={column.defaultValue} onChange={(event) => updateColumn(column.id, { defaultValue: event.target.value })} />}
+            </label>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -786,7 +943,7 @@ function GanttPreview() {
   );
 }
 
-function WidgetContent({ widget }: { widget: Widget }) {
+function WidgetContent({ widget, onSettingsChange }: { widget: Widget; onSettingsChange?: (settings: Record<string, string>) => void }) {
   const value = widget.settings.value ?? "";
   const caption = widget.settings.caption ?? "";
   switch (widget.type) {
@@ -839,7 +996,7 @@ function WidgetContent({ widget }: { widget: Widget }) {
     case "poll":
       return <PollPreview settings={widget.settings} />;
     case "customTable":
-      return <CustomTablePreview key={`${widget.id}-${widget.settings.comboOptions}-${widget.settings.comboDefault}-${widget.settings.radioOptions}-${widget.settings.radioDefault}`} settings={widget.settings} />;
+      return <CustomTablePreview settings={widget.settings} onColumnsChange={(columns) => onSettingsChange?.({ tableColumns: serializeCustomTableColumns(columns) })} />;
     case "kanban":
       return <KanbanPreview />;
     case "gantt":
@@ -852,17 +1009,15 @@ function WidgetContent({ widget }: { widget: Widget }) {
 function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { widget: Widget; onChange: (patch: Partial<Widget>, settings?: Record<string, string>) => void; onClose: () => void; onDelete: () => void; onDuplicate: () => void }) {
   const hasValue = ["stat", "progress", "profile", "donut", "gauge", "status"].includes(widget.type);
   const hasCaption = !["hero", "text", "button", "form"].includes(widget.type);
-  const customComboOptions = (widget.settings.comboOptions || "대기,진행,검토,완료").split(",").map((value) => value.trim()).filter(Boolean);
-  const customRadioOptions = (widget.settings.radioOptions || "일반,높음").split(",").map((value) => value.trim()).filter(Boolean);
   return (
-    <div className="settings-panel" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
+    <div className={`settings-panel ${widget.type === "customTable" ? "custom-table-settings" : ""}`} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
       <div className="settings-head"><div><span>ELEMENT SETTINGS</span><strong>{LABELS[widget.type]}</strong></div><button onClick={onClose} aria-label="설정 닫기">×</button></div>
       <label>제목<input value={widget.title} onChange={(event) => onChange({ title: event.target.value })} /></label>
       {widget.type === "hero" && <><label>라벨<input value={widget.settings.eyebrow ?? ""} onChange={(event) => onChange({}, { eyebrow: event.target.value })} /></label><label>설명<textarea value={widget.settings.subtitle ?? ""} onChange={(event) => onChange({}, { subtitle: event.target.value })} /></label></>}
       {widget.type === "text" && <label>본문<textarea value={widget.settings.body ?? ""} onChange={(event) => onChange({}, { body: event.target.value })} /></label>}
       {widget.type === "button" && <label>버튼 문구<input value={widget.settings.label ?? ""} onChange={(event) => onChange({}, { label: event.target.value })} /></label>}
       {widget.type === "poll" && <><label>투표 질문<textarea value={widget.settings.question ?? ""} onChange={(event) => onChange({}, { question: event.target.value })} /></label><label>선택지 1<input value={widget.settings.option1 ?? ""} onChange={(event) => onChange({}, { option1: event.target.value })} /></label><label>선택지 2<input value={widget.settings.option2 ?? ""} onChange={(event) => onChange({}, { option2: event.target.value })} /></label><label>선택지 3<input value={widget.settings.option3 ?? ""} onChange={(event) => onChange({}, { option3: event.target.value })} /></label></>}
-      {widget.type === "customTable" && <><label>콤보박스 값 · 쉼표로 구분<input value={widget.settings.comboOptions ?? "대기,진행,검토,완료"} onChange={(event) => onChange({}, { comboOptions: event.target.value })} /></label><label>콤보박스 초기값<select value={customComboOptions.includes(widget.settings.comboDefault) ? widget.settings.comboDefault : customComboOptions[0] ?? ""} onChange={(event) => onChange({}, { comboDefault: event.target.value })}>{customComboOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label>라디오 버튼 값 · 쉼표로 구분<input value={widget.settings.radioOptions ?? "일반,높음"} onChange={(event) => onChange({}, { radioOptions: event.target.value })} /></label><label>라디오 버튼 초기값<select value={customRadioOptions.includes(widget.settings.radioDefault) ? widget.settings.radioDefault : customRadioOptions[0] ?? ""} onChange={(event) => onChange({}, { radioDefault: event.target.value })}>{customRadioOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label>새 행 텍스트 초기값<input value={widget.settings.textDefault ?? "새 업무"} onChange={(event) => onChange({}, { textDefault: event.target.value })} /></label></>}
+      {widget.type === "customTable" && <CustomTableColumnDesigner settings={widget.settings} onChange={(columns) => onChange({}, { tableColumns: serializeCustomTableColumns(columns) })} />}
       {hasValue && <label>표시 값<input value={widget.settings.value ?? ""} onChange={(event) => onChange({}, { value: event.target.value })} /></label>}
       {hasCaption && <label>보조 설명<input value={widget.settings.caption ?? ""} onChange={(event) => onChange({}, { caption: event.target.value })} /></label>}
       <label>가로 크기<div className="width-buttons">{(["third", "half", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
@@ -1243,7 +1398,7 @@ export default function Home() {
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className="widget-head"><div>{!preview && <button type="button" className="widget-grip" title="누른 채 이동" aria-label={`${widget.title} 위치 이동`} onPointerDown={(event) => startPointerReorder(event, widget.id)} onPointerMove={trackPointerReorder} onPointerUp={finishPointerReorder} onPointerCancel={cancelPointerReorder}>⠿</button>}<div><h3>{widget.title}</h3>{widget.settings.caption && !["stat", "status", "progress", "profile", "donut", "gauge"].includes(widget.type) && <p>{widget.settings.caption}</p>}</div></div>{!preview && <div className="widget-actions"><button className={`settings-trigger ${selectedWidgetId === widget.id ? "active" : ""}`} onClick={() => setSelectedWidgetId((current) => current === widget.id ? null : widget.id)} aria-label={`${widget.title} 설정`} title="요소 설정">⚙</button><button className="delete-trigger" onClick={() => deleteWidget(widget.id, widget.title)} aria-label={`${widget.title} 삭제`} title="요소 삭제">×</button></div>}</div>
-                  <div className="widget-content"><WidgetContent widget={widget} /></div>
+                  <div className="widget-content"><WidgetContent widget={widget} onSettingsChange={(settings) => updateWidget(widget.id, {}, settings)} /></div>
                   {!preview && <div className="widget-drag-label">DRAG TO REORDER</div>}
                   {selectedWidgetId === widget.id && !preview && <SettingsPanel widget={widget} onClose={() => setSelectedWidgetId(null)} onChange={(patch, settings) => updateWidget(widget.id, patch, settings)} onDelete={() => deleteWidget(widget.id, widget.title)} onDuplicate={() => { const copy = { ...widget, id: newId("widget"), title: `${widget.title} 복사본` }; updateActivePage((page) => ({ ...page, widgets: [...page.widgets, copy] })); setSelectedWidgetId(copy.id); }} />}
                 </article>
