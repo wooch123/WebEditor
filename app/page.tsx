@@ -64,7 +64,7 @@ type WidgetType =
   | "kanban"
   | "gantt";
 
-type WidgetWidth = "third" | "half" | "full";
+type WidgetWidth = "third" | "half" | "two-thirds" | "full";
 
 type Widget = {
   id: string;
@@ -319,7 +319,7 @@ const LABELS: Record<WidgetType, string> = Object.fromEntries(
   TOOLBOX.flatMap((group) => group.items.map((item) => [item.type, item.label])),
 ) as Record<WidgetType, string>;
 
-const WIDTH_LABELS: Record<WidgetWidth, string> = { third: "1/3", half: "1/2", full: "전체" };
+const WIDTH_LABELS: Record<WidgetWidth, string> = { third: "1/3", half: "1/2", "two-thirds": "2/3", full: "전체" };
 
 type CustomTableFieldType = "text" | "checkbox" | "date" | "select" | "radio";
 type CustomTableColumn = {
@@ -864,7 +864,7 @@ function CustomTablePreview({ settings, onColumnsChange }: { settings: Record<st
       <div className="custom-table-toolbar"><span>{columns.length}개 열 · 머리글 순서 및 너비 조절</span><button onClick={addRow}>＋ 행 추가</button></div>
       <div className="custom-table-scroll">
         <div className="custom-table-row custom-table-head" style={gridStyle}>
-          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}<small>{CUSTOM_TABLE_TYPE_LABELS[column.type]} · {columnWidths[column.id] || column.width}px</small></span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
+          {columns.map((column, index) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><span className="column-shift"><button disabled={index === 0} onClick={() => shiftColumn(column.id, -1)} aria-label={`${column.label} 왼쪽으로`}>‹</button><button disabled={index === columns.length - 1} onClick={() => shiftColumn(column.id, 1)} aria-label={`${column.label} 오른쪽으로`}>›</button></span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
           <span />
         </div>
         {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.type}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}
@@ -1337,7 +1337,7 @@ function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { w
       {widget.type === "customTable" && <CustomTableColumnDesigner settings={widget.settings} onChange={(columns) => onChange({}, { tableColumns: serializeCustomTableColumns(columns) })} />}
       {hasValue && <label>표시 값<input value={widget.settings.value ?? ""} onChange={(event) => onChange({}, { value: event.target.value })} /></label>}
       {hasCaption && <label>보조 설명<input value={widget.settings.caption ?? ""} onChange={(event) => onChange({}, { caption: event.target.value })} /></label>}
-      <label>가로 크기<div className="width-buttons">{(["third", "half", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
+      <label>가로 크기<div className="width-buttons">{(["third", "half", "two-thirds", "full"] as WidgetWidth[]).map((width) => <button key={width} className={widget.width === width ? "active" : ""} onClick={() => onChange({ width })}>{WIDTH_LABELS[width]}</button>)}</div></label>
       <label>세로 크기
         <div className="height-buttons">
           <button type="button" className={!widget.height || widget.height === "auto" ? "active" : ""} onClick={() => onChange({ height: "auto" })}>자동</button>
