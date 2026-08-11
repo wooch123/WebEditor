@@ -129,8 +129,6 @@ type PagePanelPosition = "left" | "top" | "right";
 const DEFAULT_PAGE_PANEL_SIZE = 236;
 const MIN_PAGE_PANEL_WIDTH = 200;
 const MAX_PAGE_PANEL_WIDTH = 420;
-const MIN_PAGE_PANEL_HEIGHT = 180;
-const MAX_PAGE_PANEL_HEIGHT = 380;
 
 function clampFontSize(value: number) {
   return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, value));
@@ -140,10 +138,8 @@ function normalizePagePanelPosition(value: unknown): PagePanelPosition {
   return value === "top" || value === "right" ? value : "left";
 }
 
-function clampPagePanelSize(value: number, position: PagePanelPosition) {
-  const minimum = position === "top" ? MIN_PAGE_PANEL_HEIGHT : MIN_PAGE_PANEL_WIDTH;
-  const maximum = position === "top" ? MAX_PAGE_PANEL_HEIGHT : MAX_PAGE_PANEL_WIDTH;
-  return Math.max(minimum, Math.min(maximum, Math.round(value)));
+function clampPagePanelSize(value: number) {
+  return Math.max(MIN_PAGE_PANEL_WIDTH, Math.min(MAX_PAGE_PANEL_WIDTH, Math.round(value)));
 }
 
 type ServerStatus = "connecting" | "online" | "offline";
@@ -1393,7 +1389,7 @@ export default function Home() {
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const hydrated = useRef(false);
   const pointerDrag = useRef<{ id: string; pointerId: number } | null>(null);
-  const pagePanelResize = useRef<{ pointerId: number; startX: number; startY: number; startSize: number; position: PagePanelPosition } | null>(null);
+  const pagePanelResize = useRef<{ pointerId: number; startX: number; startSize: number; position: "left" | "right" } | null>(null);
   const dropTargetRef = useRef<DropTarget | null>(null);
   const loadPopoverRef = useRef<HTMLDivElement | null>(null);
   const themePopoverRef = useRef<HTMLDivElement | null>(null);
@@ -1503,7 +1499,7 @@ export default function Home() {
           setFontSize(clampFontSize(parsed.fontSize ?? DEFAULT_FONT_SIZE));
           const parsedPanelPosition = normalizePagePanelPosition(parsed.pagePanelPosition);
           setPagePanelPosition(parsedPanelPosition);
-          setPagePanelSize(clampPagePanelSize(parsed.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE, parsedPanelPosition));
+          setPagePanelSize(clampPagePanelSize(parsed.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE));
           setWorkspaceName(parsed.name);
         }
       }
@@ -1749,7 +1745,7 @@ export default function Home() {
     setFontSize(clampFontSize(layout.fontSize ?? DEFAULT_FONT_SIZE));
     const loadedPanelPosition = normalizePagePanelPosition(layout.pagePanelPosition);
     setPagePanelPosition(loadedPanelPosition);
-    setPagePanelSize(clampPagePanelSize(layout.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE, loadedPanelPosition));
+    setPagePanelSize(clampPagePanelSize(layout.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE));
     setWorkspaceName(layout.name);
     setSelectedWidgetId(null);
     setLoadOpen(false);
@@ -1775,14 +1771,14 @@ export default function Home() {
 
   const changePagePanelPosition = (position: PagePanelPosition) => {
     setPagePanelPosition(position);
-    setPagePanelSize((current) => clampPagePanelSize(current, position));
+    setPagePanelSize((current) => clampPagePanelSize(current));
     setToast(`페이지 영역을 ${position === "left" ? "왼쪽" : position === "top" ? "위쪽" : "오른쪽"}으로 이동했습니다.`);
   };
 
   const startPagePanelResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || pagePanelPosition === "top") return;
     event.preventDefault();
-    pagePanelResize.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startSize: pagePanelSize, position: pagePanelPosition };
+    pagePanelResize.current = { pointerId: event.pointerId, startX: event.clientX, startSize: pagePanelSize, position: pagePanelPosition };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
@@ -1790,12 +1786,8 @@ export default function Home() {
     const active = pagePanelResize.current;
     if (!active || active.pointerId !== event.pointerId) return;
     event.preventDefault();
-    const delta = active.position === "left"
-      ? event.clientX - active.startX
-      : active.position === "right"
-        ? active.startX - event.clientX
-        : event.clientY - active.startY;
-    setPagePanelSize(clampPagePanelSize(active.startSize + delta, active.position));
+    const delta = active.position === "left" ? event.clientX - active.startX : active.startX - event.clientX;
+    setPagePanelSize(clampPagePanelSize(active.startSize + delta));
   };
 
   const finishPagePanelResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -1967,7 +1959,7 @@ export default function Home() {
               <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
             </nav>}
           <div className={`sidebar-bottom status-${serverStatus}`}><span><i /> {serverStatus === "online" ? "공유 저장소 연결됨" : serverStatus === "connecting" ? "공유 저장소 연결 중" : "공유 저장소 오프라인"}</span><small>{serverStatus === "online" ? "이름으로 저장하면 모든 사용자에게 표시" : "임시 초안은 이 기기에 안전하게 유지"}</small></div>
-          <button type="button" className="page-panel-resizer" onPointerDown={startPagePanelResize} onPointerMove={trackPagePanelResize} onPointerUp={finishPagePanelResize} onPointerCancel={finishPagePanelResize} aria-label={`페이지 영역 ${pagePanelPosition === "top" ? "높이" : "너비"} 조절 · 현재 ${pagePanelSize}px`} title={`끌어서 페이지 영역 ${pagePanelPosition === "top" ? "높이" : "너비"} 조절`}><span /></button>
+          <button type="button" className="page-panel-resizer" onPointerDown={startPagePanelResize} onPointerMove={trackPagePanelResize} onPointerUp={finishPagePanelResize} onPointerCancel={finishPagePanelResize} aria-label={`페이지 영역 너비 조절 · 현재 ${pagePanelSize}px`} title="끌어서 페이지 영역 너비 조절"><span /></button>
         </aside>
 
         {!preview && <aside className="toolbox">

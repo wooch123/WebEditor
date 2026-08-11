@@ -58,9 +58,7 @@ function normalizeLayout(value) {
   const fontSize = Number.isFinite(Number(value.fontSize)) ? Math.max(8, Math.min(15, Number(value.fontSize))) : 13;
   const pagePanelPosition = value.pagePanelPosition === "top" || value.pagePanelPosition === "right" ? value.pagePanelPosition : "left";
   const rawPagePanelSize = Number(value.pagePanelSize);
-  const minimumPanelSize = pagePanelPosition === "top" ? 180 : 200;
-  const maximumPanelSize = pagePanelPosition === "top" ? 380 : 420;
-  const pagePanelSize = Number.isFinite(rawPagePanelSize) ? Math.max(minimumPanelSize, Math.min(maximumPanelSize, Math.round(rawPagePanelSize))) : 236;
+  const pagePanelSize = Number.isFinite(rawPagePanelSize) ? Math.max(200, Math.min(420, Math.round(rawPagePanelSize))) : 236;
   const customTheme = value.themeId === "custom" ? normalizeCustomTheme(value.customTheme) : undefined;
   return { name, updatedAt, pages: value.pages, themeId: value.themeId, ...(customTheme ? { customTheme } : {}), fontSize, pagePanelPosition, pagePanelSize };
 }
