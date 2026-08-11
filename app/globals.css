@@ -394,6 +394,18 @@ select:focus-visible,
 .page-nav-row { --page-depth: 0; position: relative; padding-left: calc(var(--page-depth) * 13px); }
 .page-nav-row.is-child::before { content: ""; position: absolute; left: calc(var(--page-depth) * 13px - 7px); top: 0; width: 7px; height: 20px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0 0 0 5px; opacity: .75; }
 
+.page-icon { --icon-color: var(--accent); width: 27px; height: 27px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--icon-color) 22%, var(--line)); border-radius: 8px; background: color-mix(in srgb, var(--icon-color) 11%, var(--surface)); color: var(--icon-color); font-family: "Segoe UI Symbol", "Arial Unicode MS", sans-serif; font-size: 14px; font-weight: 700; line-height: 1; transition: color .2s, background .2s, border-color .2s, transform .15s; }
+.page-icon.tone-accent,
+.icon-tone-control .tone-accent { --icon-color: var(--accent); }
+.page-icon.tone-accent2,
+.icon-tone-control .tone-accent2 { --icon-color: var(--accent-2); }
+.page-icon.tone-positive,
+.icon-tone-control .tone-positive { --icon-color: var(--positive); }
+.page-icon.tone-text,
+.icon-tone-control .tone-text { --icon-color: var(--text); }
+.page-icon.tone-muted,
+.icon-tone-control .tone-muted { --icon-color: var(--muted); }
+
 .page-sidebar nav button {
   width: 100%;
   height: 39px;
@@ -413,11 +425,13 @@ select:focus-visible,
 .page-sidebar nav button:hover { color: var(--text); background: var(--panel); }
 .page-sidebar nav button.active { color: var(--text); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent); box-shadow: inset 2px 0 var(--accent); }
 .page-sidebar nav button > span { font-size: 13px; color: inherit; }
-.page-sidebar nav button.active > span { color: var(--accent); }
+.page-sidebar nav .page-link > .page-icon { width: 24px; height: 24px; border-radius: 7px; color: var(--icon-color); font-size: 12px; }
+.page-sidebar nav button.active > .page-icon { border-color: color-mix(in srgb, var(--icon-color) 52%, var(--line)); background: color-mix(in srgb, var(--icon-color) 17%, var(--surface)); box-shadow: 0 4px 12px color-mix(in srgb, var(--icon-color) 12%, transparent); }
 .page-sidebar nav button b { font-size: 11px; font-weight: 600; }
 .page-sidebar nav button i { min-width: 20px; padding: 2px 5px; border-radius: 8px; background: var(--panel); color: var(--muted); text-align: center; font-style: normal; font-size: 8px; }
 .page-row-actions { position: absolute; z-index: 2; top: 7px; right: 4px; display: flex; gap: 3px; opacity: 0; transform: scale(.88); transform-origin: right center; transition: opacity .15s, transform .15s; }
 .page-sidebar nav .page-row-actions button { position: static; width: 25px; height: 25px; padding: 0; display: grid; grid-template-columns: 1fr; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); background: var(--surface); font-size: 13px; }
+.page-sidebar nav .page-icon-edit { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 36%, var(--line)); }
 .page-sidebar nav .page-child-add { color: var(--accent); }
 .page-sidebar nav .page-delete { color: #ff7185; border-color: color-mix(in srgb, #ff7185 36%, var(--line)); }
 .page-nav-row:hover .page-row-actions,
@@ -547,8 +561,13 @@ select:focus-visible,
 }
 
 .page-title-row { display: flex; align-items: center; gap: 10px; }
+.page-title-row .page-icon-trigger { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; cursor: pointer; }
+.page-title-row .page-icon-trigger:not(:disabled):hover { background: var(--elevated); }
+.page-title-row .page-icon-trigger:not(:disabled):hover .page-icon { transform: translateY(-1px) scale(1.04); }
+.page-title-row .page-icon-trigger:disabled { cursor: default; }
+.page-title-row .page-icon-trigger .page-icon { width: 32px; height: 32px; font-size: 16px; }
 .page-title-row input { min-width: 240px; max-width: 420px; padding: 0; border: 0; background: transparent; color: var(--text); font-size: 18px; font-weight: 750; letter-spacing: -.4px; }
-.page-title-row span { color: var(--muted); font-size: 8px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 4px; }
+.page-title-row > span { color: var(--muted); font-size: 8px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 4px; }
 .page-title-row .page-parent-path { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); color: var(--accent); }
 .canvas-meta { display: flex; align-items: center; gap: 10px; }
 .canvas-meta > span { height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; font-size: 8px; }
@@ -1407,6 +1426,48 @@ select:focus-visible,
 .preview-mode .canvas-widget { padding: 17px; cursor: default; }
 .preview-mode .canvas-widget:hover { transform: none; }
 .preview-mode .page-title-row input { font-size: 19px; }
+
+.icon-picker-backdrop { position: fixed; z-index: 1000; inset: 0; padding: 30px; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(10px); animation: icon-backdrop-in .16s ease-out; }
+.icon-picker { width: min(850px, calc(100vw - 60px)); max-height: min(820px, calc(100vh - 60px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); border-radius: 16px; background: var(--panel); color: var(--text); box-shadow: 0 30px 90px color-mix(in srgb, black 42%, transparent); animation: icon-picker-in .18s ease-out; }
+.icon-picker-head { min-height: 94px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, var(--panel)), color-mix(in srgb, var(--accent-2) 6%, var(--panel))); }
+.icon-picker-current { min-width: 0; display: flex; align-items: center; gap: 13px; }
+.icon-picker-current > .page-icon { width: 47px; height: 47px; border-radius: 13px; font-size: 23px; }
+.icon-picker-current > div { min-width: 0; }
+.icon-picker-current span { color: var(--accent); font-size: 7px; font-weight: 800; letter-spacing: 1.3px; }
+.icon-picker-current h2 { margin: 4px 0 2px; font-size: 17px; letter-spacing: -.2px; }
+.icon-picker-current p { margin: 0; color: var(--muted); font-size: 8px; }
+.icon-picker-head > button { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 18px; cursor: pointer; }
+.icon-picker-head > button:hover { border-color: var(--accent); color: var(--text); }
+.icon-picker-controls { padding: 15px 20px 12px; display: grid; grid-template-columns: minmax(230px, 1fr) auto; align-items: end; gap: 16px; }
+.icon-search { height: 38px; display: grid; grid-template-columns: 27px minmax(0, 1fr) auto; align-items: center; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.icon-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent); }
+.icon-search > span { color: var(--accent); font-size: 18px; }
+.icon-search input { min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 10px; }
+.icon-search b { min-width: 27px; padding: 3px 6px; border-radius: 9px; background: var(--elevated); color: var(--muted); text-align: center; font-size: 7px; font-variant-numeric: tabular-nums; }
+.icon-tone-control { display: flex; flex-direction: column; gap: 6px; }
+.icon-tone-control > span { color: var(--muted); font-size: 7px; font-weight: 700; }
+.icon-tone-control > div { display: flex; gap: 4px; }
+.icon-tone-control button { --icon-color: var(--accent); height: 28px; padding: 0 7px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--muted); font-size: 7px; cursor: pointer; }
+.icon-tone-control button i { width: 7px; height: 7px; border-radius: 50%; background: var(--icon-color); box-shadow: 0 0 8px color-mix(in srgb, var(--icon-color) 45%, transparent); }
+.icon-tone-control button:hover { color: var(--text); }
+.icon-tone-control button.active { border-color: color-mix(in srgb, var(--icon-color) 58%, var(--line)); background: color-mix(in srgb, var(--icon-color) 10%, var(--surface)); color: var(--icon-color); }
+.icon-categories { padding: 0 20px 12px; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: thin; }
+.icon-categories button { height: 27px; padding: 0 10px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 14px; background: transparent; color: var(--muted); font-size: 7px; cursor: pointer; }
+.icon-categories button:hover { color: var(--text); background: var(--surface); }
+.icon-categories button.active { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); }
+.page-icon-grid { min-height: 250px; padding: 2px 20px 16px; display: grid; grid-template-columns: repeat(12, minmax(48px, 1fr)); gap: 6px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.page-icon-grid > button { min-width: 0; height: 61px; padding: 5px 3px 4px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; border: 1px solid transparent; border-radius: 9px; background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--muted); cursor: pointer; }
+.page-icon-grid > button .page-icon { width: 30px; height: 30px; border: 0; background: transparent; font-size: 17px; }
+.page-icon-grid > button small { width: 100%; overflow: hidden; font-size: 6px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.page-icon-grid > button:hover { border-color: color-mix(in srgb, var(--accent) 28%, var(--line)); background: var(--surface); color: var(--text); transform: translateY(-1px); }
+.page-icon-grid > button.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 11%, var(--surface)); color: var(--accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent); }
+.icon-empty { grid-column: 1 / -1; min-height: 230px; display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 9px; }
+.icon-picker-footer { min-height: 60px; padding: 11px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 45%, var(--panel)); }
+.icon-picker-footer > span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 7px; }
+.icon-picker-footer > span i { width: 6px; height: 6px; border-radius: 50%; background: var(--positive); }
+.icon-picker-footer > button { height: 34px; padding: 0 16px; border: 0; border-radius: 8px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--accent-2))); color: white; font-size: 9px; font-weight: 750; cursor: pointer; box-shadow: 0 7px 18px color-mix(in srgb, var(--accent) 22%, transparent); }
+@keyframes icon-backdrop-in { from { opacity: 0; } }
+@keyframes icon-picker-in { from { opacity: 0; transform: translateY(8px) scale(.985); } }
 
 .toast {
   position: fixed;

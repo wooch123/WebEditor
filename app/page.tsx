@@ -47,9 +47,12 @@ type Page = {
   id: string;
   name: string;
   icon: string;
+  iconTone?: PageIconTone;
   parentId?: string | null;
   widgets: Widget[];
 };
+
+type PageIconTone = "accent" | "accent2" | "positive" | "text" | "muted";
 
 type Theme = {
   id: string;
@@ -113,6 +116,37 @@ const THEMES: Theme[] = [
   { id: "lavender-air", name: "Lavender Air", mode: "light", bg: "#f3f2fb", sidebar: "#fdfcff", panel: "#f8f7fe", surface: "#ffffff", elevated: "#e9e7f6", line: "#d9d6ec", text: "#29263a", muted: "#747087", accent: "#6d63d9", accent2: "#d35e9b", positive: "#36936b" },
   { id: "aqua-paper", name: "Aqua Paper", mode: "light", bg: "#eef7f8", sidebar: "#fbffff", panel: "#f6fbfc", surface: "#ffffff", elevated: "#e0eff1", line: "#cde1e4", text: "#203235", muted: "#6d8185", accent: "#168da1", accent2: "#705ec8", positive: "#2d9165" },
 ];
+
+const PAGE_ICON_GROUPS = [
+  { category: "기본", icons: [["⌂", "홈"], ["⌘", "워크스페이스"], ["☰", "메뉴"], ["▦", "대시보드"], ["▤", "목록"], ["▥", "패널"], ["▧", "레이아웃"], ["▨", "타일"], ["▩", "그리드"], ["□", "페이지"], ["◇", "프로젝트"], ["○", "개요"]] },
+  { category: "업무", icons: [["⚙", "설정"], ["⚒", "도구"], ["⚖", "정책"], ["⚑", "목표"], ["⚐", "마일스톤"], ["⌁", "흐름"], ["⌗", "태그"], ["§", "규정"], ["¶", "문단"], ["※", "참고"], ["†", "중요"], ["‡", "승인"]] },
+  { category: "문서", icons: [["✎", "편집"], ["✐", "작성"], ["✑", "서명"], ["✒", "기록"], ["✉", "메일"], ["✂", "정리"], ["☷", "문서 목록"], ["☶", "문서 상세"], ["☵", "자료"], ["☲", "노트"], ["☳", "양식"], ["☱", "보관함"]] },
+  { category: "소통", icons: [["☏", "연락처"], ["☎", "전화"], ["☊", "알림"], ["☋", "공지"], ["♩", "미디어"], ["♪", "오디오"], ["♫", "콘텐츠"], ["♬", "방송"], ["☼", "아이디어"], ["☀", "업데이트"], ["☁", "클라우드"], ["☂", "지원"]] },
+  { category: "분석", icons: [["∑", "합계"], ["∫", "누적"], ["∂", "변화"], ["∆", "증감"], ["∇", "감소"], ["∞", "지속"], ["≈", "비교"], ["≡", "데이터"], ["≤", "하한"], ["≥", "상한"], ["%", "비율"], ["#", "지표"]] },
+  { category: "일정", icons: [["◷", "시간"], ["◶", "오전"], ["◵", "오후"], ["◴", "마감"], ["◰", "주간"], ["◱", "월간"], ["◲", "분기"], ["◳", "연간"], ["⌛", "대기"], ["⌚", "일정"], ["⧗", "타이머"], ["⧖", "소요 시간"]] },
+  { category: "방향", icons: [["←", "이전"], ["↑", "위"], ["→", "다음"], ["↓", "아래"], ["↔", "가로 이동"], ["↕", "세로 이동"], ["↗", "상승"], ["↘", "하락"], ["↙", "왼쪽 아래"], ["↖", "왼쪽 위"], ["⇄", "교환"], ["⇅", "정렬"]] },
+  { category: "상태", icons: [["✓", "완료"], ["✔", "확인"], ["✕", "닫기"], ["✖", "오류"], ["+", "추가"], ["−", "제거"], ["±", "조정"], ["!", "경고"], ["?", "도움말"], ["*", "필수"], ["•", "진행"], ["◉", "활성"]] },
+  { category: "사람", icons: [["♙", "구성원"], ["♟", "담당자"], ["♔", "관리자"], ["♕", "리더"], ["♖", "조직"], ["♗", "전문가"], ["♘", "협업자"], ["♚", "책임자"], ["♛", "오너"], ["♜", "부서"], ["♝", "파트너"], ["♞", "외부 인력"]] },
+  { category: "강조", icons: [["☆", "즐겨찾기"], ["★", "중요 항목"], ["✦", "새 기능"], ["✧", "추천"], ["✪", "우수"], ["✫", "핵심"], ["✬", "성과"], ["✭", "평가"], ["✮", "등급"], ["✯", "주목"], ["✰", "베스트"], ["❖", "특별"]] },
+] as const;
+
+const PAGE_ICONS = PAGE_ICON_GROUPS.flatMap((group) => group.icons.map(([glyph, label], index) => ({
+  id: `${group.category}-${index + 1}`,
+  category: group.category,
+  glyph,
+  label,
+})));
+const PAGE_ICON_TONES: Array<{ id: PageIconTone; label: string }> = [
+  { id: "accent", label: "포인트" },
+  { id: "accent2", label: "보조" },
+  { id: "positive", label: "완료" },
+  { id: "text", label: "본문" },
+  { id: "muted", label: "중립" },
+];
+
+function PageIcon({ glyph, tone = "accent" }: { glyph: string; tone?: PageIconTone }) {
+  return <span className={`page-icon tone-${tone}`} aria-hidden="true">{glyph}</span>;
+}
 
 const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label: string; icon: string; description: string }> }> = [
   { category: "기본 구성", items: [
@@ -211,6 +245,7 @@ const INITIAL_PAGES: Page[] = [
     id: "dashboard",
     name: "워크 대시보드",
     icon: "⌘",
+    iconTone: "accent",
     widgets: [
       makeWidget("hero", { title: "안녕하세요, 좋은 아침입니다" }),
       makeWidget("stat", { title: "이번 달 매출", width: "third" }),
@@ -221,10 +256,10 @@ const INITIAL_PAGES: Page[] = [
       makeWidget("live", { title: "팀 라이브 피드", width: "half" }),
     ],
   },
-  { id: "projects", name: "프로젝트", icon: "◇", widgets: [makeWidget("progress", { title: "진행 중인 프로젝트", width: "half" }), makeWidget("assign", { title: "담당 업무", width: "half" }), makeWidget("board", { title: "프로젝트 보드" })] },
-  { id: "board", name: "업무 게시판", icon: "▤", widgets: [makeWidget("hero", { title: "팀 업무 게시판", settings: { subtitle: "담당자, 우선순위, 진행 상태를 한 곳에서 관리합니다.", eyebrow: "TEAM BOARD" } }), makeWidget("board", { title: "전체 업무" })] },
-  { id: "content", name: "문서 에디터", icon: "✎", widgets: [makeWidget("editor", { title: "새 업무 문서" })] },
-  { id: "people", name: "팀과 담당자", icon: "◎", widgets: [makeWidget("profile", { title: "프로젝트 리드", width: "third" }), makeWidget("assign", { title: "업무 배정", width: "full" })] },
+  { id: "projects", name: "프로젝트", icon: "◇", iconTone: "accent2", widgets: [makeWidget("progress", { title: "진행 중인 프로젝트", width: "half" }), makeWidget("assign", { title: "담당 업무", width: "half" }), makeWidget("board", { title: "프로젝트 보드" })] },
+  { id: "board", name: "업무 게시판", icon: "▤", iconTone: "positive", widgets: [makeWidget("hero", { title: "팀 업무 게시판", settings: { subtitle: "담당자, 우선순위, 진행 상태를 한 곳에서 관리합니다.", eyebrow: "TEAM BOARD" } }), makeWidget("board", { title: "전체 업무" })] },
+  { id: "content", name: "문서 에디터", icon: "✎", iconTone: "text", widgets: [makeWidget("editor", { title: "새 업무 문서" })] },
+  { id: "people", name: "팀과 담당자", icon: "♙", iconTone: "muted", widgets: [makeWidget("profile", { title: "프로젝트 리드", width: "third" }), makeWidget("assign", { title: "업무 배정", width: "full" })] },
 ];
 
 function MiniChart({ variant }: { variant: "trend" | "bar" }) {
@@ -853,6 +888,9 @@ export default function Home() {
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
+  const [iconPickerPageId, setIconPickerPageId] = useState<string | null>(null);
+  const [iconQuery, setIconQuery] = useState("");
+  const [iconCategory, setIconCategory] = useState("전체");
   const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>([]);
   const [preview, setPreview] = useState(false);
   const [toast, setToast] = useState("");
@@ -864,7 +902,15 @@ export default function Home() {
   const loadPopoverRef = useRef<HTMLDivElement | null>(null);
 
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
+  const iconPickerPage = pages.find((page) => page.id === iconPickerPageId);
   const theme = THEMES.find((item) => item.id === themeId) ?? THEMES[0];
+  const filteredPageIcons = useMemo(() => {
+    const query = iconQuery.trim().toLocaleLowerCase("ko-KR");
+    return PAGE_ICONS.filter((icon) =>
+      (iconCategory === "전체" || icon.category === iconCategory) &&
+      (!query || `${icon.label} ${icon.category} ${icon.glyph}`.toLocaleLowerCase("ko-KR").includes(query)),
+    );
+  }, [iconCategory, iconQuery]);
   const pageTree = useMemo(() => {
     const result: Array<{ page: Page; depth: number }> = [];
     const visited = new Set<string>();
@@ -947,8 +993,29 @@ export default function Home() {
     return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
   }, [loadOpen]);
 
+  useEffect(() => {
+    if (!iconPickerPageId) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIconPickerPageId(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [iconPickerPageId]);
+
   const updateActivePage = (updater: (page: Page) => Page) => {
     setPages((current) => current.map((page) => page.id === activePageId ? updater(page) : page));
+  };
+
+  const openIconPicker = (pageId: string) => {
+    setIconPickerPageId(pageId);
+    setIconQuery("");
+    setIconCategory("전체");
+    setThemeOpen(false);
+    setLoadOpen(false);
+  };
+
+  const updatePageAppearance = (pageId: string, patch: Pick<Page, "icon"> | Pick<Page, "iconTone">) => {
+    setPages((current) => current.map((page) => page.id === pageId ? { ...page, ...patch } : page));
   };
 
   const addWidget = (type: WidgetType) => {
@@ -1077,7 +1144,7 @@ export default function Home() {
     const id = newId("page");
     const parent = parentId ? pages.find((page) => page.id === parentId) : undefined;
     const siblingCount = pages.filter((page) => (page.parentId ?? null) === parentId).length;
-    setPages((current) => [...current, { id, name: parent ? `${parent.name} 하위 ${siblingCount + 1}` : `새 페이지 ${siblingCount + 1}`, icon: parent ? "↳" : "□", parentId, widgets: [] }]);
+    setPages((current) => [...current, { id, name: parent ? `${parent.name} 하위 ${siblingCount + 1}` : `새 페이지 ${siblingCount + 1}`, icon: parent ? "→" : "□", iconTone: parent?.iconTone ?? "accent", parentId, widgets: [] }]);
     setActivePageId(id);
     setSelectedWidgetId(null);
     setToast(parent ? `‘${parent.name}’ 아래에 하위 페이지를 추가했습니다.` : "최상위 페이지를 추가했습니다.");
@@ -1133,7 +1200,7 @@ export default function Home() {
           <nav>
             <span className="nav-label">PAGES</span>
             <span className="nav-helper">각 페이지의 ＋로 하위 페이지 추가</span>
-            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><span>{page.icon}</span><b>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
+            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
             <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
           <div className="sidebar-bottom"><span><i /> 자동 임시 저장</span><small>이 기기의 브라우저에 보관</small></div>
@@ -1148,7 +1215,7 @@ export default function Home() {
 
         <section className="workspace-canvas" onClick={() => setSelectedWidgetId(null)}>
           <div className="canvas-head">
-            <div><span className="canvas-kicker">{preview ? "LIVE PREVIEW" : "PAGE CANVAS"}</span><div className="page-title-row"><input value={activePage.name} onChange={(event) => updateActivePage((page) => ({ ...page, name: event.target.value }))} aria-label="현재 페이지 이름" />{activePagePath.length > 1 && <span className="page-parent-path">↳ {activePagePath.slice(0, -1).map((page) => page.name).join(" / ")}</span>}<span>{activePage.widgets.length} elements</span></div></div>
+            <div><span className="canvas-kicker">{preview ? "LIVE PREVIEW" : "PAGE CANVAS"}</span><div className="page-title-row"><button type="button" className="page-icon-trigger" disabled={preview} onClick={(event) => { event.stopPropagation(); openIconPicker(activePage.id); }} aria-label={`${activePage.name} 아이콘 선택`} title={preview ? undefined : "페이지 아이콘 선택"}><PageIcon glyph={activePage.icon} tone={activePage.iconTone} /></button><input value={activePage.name} onChange={(event) => updateActivePage((page) => ({ ...page, name: event.target.value }))} aria-label="현재 페이지 이름" />{activePagePath.length > 1 && <span className="page-parent-path">↳ {activePagePath.slice(0, -1).map((page) => page.name).join(" / ")}</span>}<span>{activePage.widgets.length} elements</span></div></div>
             <div className="canvas-meta"><span><i className="dot-online" /> 변경사항 자동 저장</span><span>1440px</span><button aria-label="더 보기">•••</button></div>
           </div>
 
@@ -1176,6 +1243,24 @@ export default function Home() {
           </div>
         </section>
       </div>
+      {iconPickerPage && <div className="icon-picker-backdrop" onPointerDown={() => setIconPickerPageId(null)}>
+        <section className="icon-picker" role="dialog" aria-modal="true" aria-labelledby="icon-picker-title" onPointerDown={(event) => event.stopPropagation()}>
+          <header className="icon-picker-head">
+            <div className="icon-picker-current"><PageIcon glyph={iconPickerPage.icon} tone={iconPickerPage.iconTone} /><div><span>PAGE ICON LIBRARY</span><h2 id="icon-picker-title">{iconPickerPage.name} 아이콘</h2><p>120개 아이콘과 테마 연동 색상</p></div></div>
+            <button type="button" onClick={() => setIconPickerPageId(null)} aria-label="아이콘 선택 닫기">×</button>
+          </header>
+          <div className="icon-picker-controls">
+            <label className="icon-search"><span>⌕</span><input autoFocus value={iconQuery} onChange={(event) => setIconQuery(event.target.value)} placeholder="아이콘 이름 검색" aria-label="페이지 아이콘 검색" /><b>{filteredPageIcons.length}</b></label>
+            <div className="icon-tone-control"><span>테마 색상</span><div>{PAGE_ICON_TONES.map((tone) => <button type="button" key={tone.id} className={`tone-${tone.id} ${(iconPickerPage.iconTone ?? "accent") === tone.id ? "active" : ""}`} onClick={() => updatePageAppearance(iconPickerPage.id, { iconTone: tone.id })}><i />{tone.label}</button>)}</div></div>
+          </div>
+          <div className="icon-categories" aria-label="아이콘 분류">{["전체", ...PAGE_ICON_GROUPS.map((group) => group.category)].map((category) => <button type="button" key={category} className={iconCategory === category ? "active" : ""} onClick={() => setIconCategory(category)}>{category}</button>)}</div>
+          <div className="page-icon-grid">
+            {filteredPageIcons.map((icon) => <button type="button" key={icon.id} className={iconPickerPage.icon === icon.glyph ? "active" : ""} onClick={() => updatePageAppearance(iconPickerPage.id, { icon: icon.glyph })} aria-label={`${icon.label} 아이콘 선택`} title={`${icon.category} · ${icon.label}`}><PageIcon glyph={icon.glyph} tone={iconPickerPage.iconTone} /><small>{icon.label}</small></button>)}
+            {filteredPageIcons.length === 0 && <div className="icon-empty">검색 조건에 맞는 아이콘이 없습니다.</div>}
+          </div>
+          <footer className="icon-picker-footer"><span><i /> 선택 내용은 자동 저장됩니다.</span><button type="button" onClick={() => setIconPickerPageId(null)}>선택 완료</button></footer>
+        </section>
+      </div>}
       {toast && <div className="toast"><span>✓</span>{toast}</div>}
     </main>
   );
