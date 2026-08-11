@@ -1423,6 +1423,31 @@ export default function Home() {
     pages.filter((page) => !visited.has(page.id)).forEach((page) => visit(page, 0));
     return result;
   }, [pages, collapsedTopPageIds]);
+  const topPageGroups = useMemo(() => {
+    const result: Array<{ root: Page; descendants: Array<{ page: Page; depth: number }> }> = [];
+    const ids = new Set(pages.map((page) => page.id));
+    const grouped = new Set<string>();
+    const addGroup = (root: Page) => {
+      const descendants: Array<{ page: Page; depth: number }> = [];
+      const path = new Set<string>([root.id]);
+      grouped.add(root.id);
+      const visit = (parentId: string, depth: number) => {
+        pages.filter((page) => page.parentId === parentId).forEach((page) => {
+          if (path.has(page.id) || grouped.has(page.id)) return;
+          grouped.add(page.id);
+          path.add(page.id);
+          descendants.push({ page, depth });
+          visit(page.id, depth + 1);
+          path.delete(page.id);
+        });
+      };
+      visit(root.id, 1);
+      result.push({ root, descendants });
+    };
+    pages.filter((page) => !page.parentId || !ids.has(page.parentId)).forEach(addGroup);
+    pages.filter((page) => !grouped.has(page.id)).forEach(addGroup);
+    return result;
+  }, [pages]);
   const activePagePath = useMemo(() => {
     const path: Page[] = [];
     const visited = new Set<string>();
@@ -1904,23 +1929,43 @@ export default function Home() {
             </div>
           </div>
           <div className="user-block"><span className="avatar avatar-accent">YL</span><div><strong>워크스페이스</strong><span>관리자 모드</span></div><button>•••</button></div>
-          <nav>
-            <span className="nav-label">PAGES</span>
-            <span className="nav-helper">최상위 페이지의 화살표로 하위 목록 접기</span>
-            {pageTree.map(({ page, depth }) => {
-              const isTopLevel = depth === 0;
-              const hasChildren = isTopLevel && pages.some((child) => child.parentId === page.id);
-              const collapsed = hasChildren && collapsedTopPageIds.has(page.id);
-              return <div key={page.id} className={`page-nav-row ${isTopLevel ? "is-top-level" : "is-child"} ${hasChildren ? "has-children" : ""} ${collapsed ? "is-collapsed" : ""}`} style={{ "--page-depth": depth } as CSSProperties}>
-                {isTopLevel && (hasChildren
-                  ? <button className="page-collapse-toggle" type="button" aria-expanded={!collapsed} aria-label={`${page.name} 하위 페이지 ${collapsed ? "펼치기" : "접기"}`} title={`하위 페이지 ${collapsed ? "펼치기" : "접기"}`} onClick={() => toggleTopPageCollapse(page.id)}><span>›</span></button>
-                  : <span className="page-collapse-toggle page-collapse-placeholder" aria-hidden="true"><span>›</span></span>)}
-                <button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button>
-                <div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div>
-              </div>;
-            })}
-            <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
-          </nav>
+          {pagePanelPosition === "top" ? <nav className="top-page-navigation" aria-label="상단 페이지 목록">
+            <div className="top-page-strip">
+              {topPageGroups.map(({ root, descendants }) => {
+                const groupActive = activePageId === root.id || descendants.some(({ page }) => page.id === activePageId);
+                return <div className={`top-page-menu ${descendants.length > 0 ? "has-children" : ""} ${groupActive ? "group-active" : ""}`} key={root.id}>
+                  <div className="top-page-root">
+                    <button className={`page-link ${activePageId === root.id ? "active" : ""}`} onClick={() => { setActivePageId(root.id); setSelectedWidgetId(null); }}><PageIcon glyph={root.icon} tone={root.iconTone} /><b title={root.name}>{root.name}{descendants.length > 0 && <span className="top-page-caret" aria-hidden="true">⌄</span>}</b><i>{root.widgets.length}</i></button>
+                    <div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(root.id)} aria-label={`${root.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(root.id)} aria-label={`${root.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(root.id)} aria-label={`${root.name} 삭제`} title="페이지 삭제">×</button></div>
+                  </div>
+                  {descendants.length > 0 && <div className="top-page-dropdown">
+                    <div className="top-page-dropdown-head"><span>하위 페이지</span><b>{descendants.length}</b></div>
+                    {descendants.map(({ page, depth }) => <div className="page-nav-row is-child" style={{ "--page-depth": depth } as CSSProperties} key={page.id}>
+                      <button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button>
+                      <div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div>
+                    </div>)}
+                  </div>}
+                </div>;
+              })}
+              <button className="top-add-page" onClick={() => addPage(null)} title="최상위 페이지 추가"><span>＋</span><b>페이지 추가</b></button>
+            </div>
+          </nav> : <nav>
+              <span className="nav-label">PAGES</span>
+              <span className="nav-helper">최상위 페이지의 화살표로 하위 목록 접기</span>
+              {pageTree.map(({ page, depth }) => {
+                const isTopLevel = depth === 0;
+                const hasChildren = isTopLevel && pages.some((child) => child.parentId === page.id);
+                const collapsed = hasChildren && collapsedTopPageIds.has(page.id);
+                return <div key={page.id} className={`page-nav-row ${isTopLevel ? "is-top-level" : "is-child"} ${hasChildren ? "has-children" : ""} ${collapsed ? "is-collapsed" : ""}`} style={{ "--page-depth": depth } as CSSProperties}>
+                  {isTopLevel && (hasChildren
+                    ? <button className="page-collapse-toggle" type="button" aria-expanded={!collapsed} aria-label={`${page.name} 하위 페이지 ${collapsed ? "펼치기" : "접기"}`} title={`하위 페이지 ${collapsed ? "펼치기" : "접기"}`} onClick={() => toggleTopPageCollapse(page.id)}><span>›</span></button>
+                    : <span className="page-collapse-toggle page-collapse-placeholder" aria-hidden="true"><span>›</span></span>)}
+                  <button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button>
+                  <div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div>
+                </div>;
+              })}
+              <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
+            </nav>}
           <div className={`sidebar-bottom status-${serverStatus}`}><span><i /> {serverStatus === "online" ? "공유 저장소 연결됨" : serverStatus === "connecting" ? "공유 저장소 연결 중" : "공유 저장소 오프라인"}</span><small>{serverStatus === "online" ? "이름으로 저장하면 모든 사용자에게 표시" : "임시 초안은 이 기기에 안전하게 유지"}</small></div>
           <button type="button" className="page-panel-resizer" onPointerDown={startPagePanelResize} onPointerMove={trackPagePanelResize} onPointerUp={finishPagePanelResize} onPointerCancel={finishPagePanelResize} aria-label={`페이지 영역 ${pagePanelPosition === "top" ? "높이" : "너비"} 조절 · 현재 ${pagePanelSize}px`} title={`끌어서 페이지 영역 ${pagePanelPosition === "top" ? "높이" : "너비"} 조절`}><span /></button>
         </aside>
