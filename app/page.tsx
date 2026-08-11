@@ -1356,6 +1356,7 @@ function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { w
 export default function Home() {
   const [pages, setPages] = useState<Page[]>(INITIAL_PAGES);
   const [activePageId, setActivePageId] = useState(INITIAL_PAGES[0].id);
+  const [collapsedTopPageIds, setCollapsedTopPageIds] = useState<Set<string>>(() => new Set());
   const [themeId, setThemeId] = useState(THEMES[0].id);
   const [customTheme, setCustomTheme] = useState<Theme>(DEFAULT_CUSTOM_THEME);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
@@ -1394,16 +1395,17 @@ export default function Home() {
     const result: Array<{ page: Page; depth: number }> = [];
     const visited = new Set<string>();
     const ids = new Set(pages.map((page) => page.id));
-    const visit = (page: Page, depth: number) => {
+    const visit = (page: Page, depth: number, visible = true) => {
       if (visited.has(page.id)) return;
       visited.add(page.id);
-      result.push({ page, depth });
-      pages.filter((candidate) => candidate.parentId === page.id).forEach((child) => visit(child, depth + 1));
+      if (visible) result.push({ page, depth });
+      const showChildren = visible && !(depth === 0 && collapsedTopPageIds.has(page.id));
+      pages.filter((candidate) => candidate.parentId === page.id).forEach((child) => visit(child, depth + 1, showChildren));
     };
     pages.filter((page) => !page.parentId || !ids.has(page.parentId)).forEach((page) => visit(page, 0));
     pages.filter((page) => !visited.has(page.id)).forEach((page) => visit(page, 0));
     return result;
-  }, [pages]);
+  }, [pages, collapsedTopPageIds]);
   const activePagePath = useMemo(() => {
     const path: Page[] = [];
     const visited = new Set<string>();
@@ -1687,6 +1689,7 @@ export default function Home() {
   const loadLayout = (layout: SavedLayout) => {
     setPages(layout.pages);
     setActivePageId(layout.pages[0].id);
+    setCollapsedTopPageIds(new Set());
     if (layout.themeId === CUSTOM_THEME_ID) {
       if (layout.customTheme) {
         setCustomTheme(createCustomTheme(layout.customTheme));
@@ -1744,10 +1747,29 @@ export default function Home() {
     setToast("커스텀 테마를 기본값으로 초기화했습니다.");
   };
 
+  const toggleTopPageCollapse = (pageId: string) => {
+    const willCollapse = !collapsedTopPageIds.has(pageId);
+    setCollapsedTopPageIds((current) => {
+      const next = new Set(current);
+      if (next.has(pageId)) next.delete(pageId);
+      else next.add(pageId);
+      return next;
+    });
+    if (willCollapse && activePageId !== pageId && activePagePath.some((page) => page.id === pageId)) {
+      setActivePageId(pageId);
+      setSelectedWidgetId(null);
+    }
+    setToast(willCollapse ? "하위 페이지 목록을 접었습니다." : "하위 페이지 목록을 펼쳤습니다.");
+  };
+
   const addPage = (parentId: string | null = null) => {
     const id = newId("page");
     const parent = parentId ? pages.find((page) => page.id === parentId) : undefined;
     const siblingCount = pages.filter((page) => (page.parentId ?? null) === parentId).length;
+    let topLevelParent = parent;
+    while (topLevelParent?.parentId) topLevelParent = pages.find((page) => page.id === topLevelParent?.parentId);
+    const topLevelParentId = topLevelParent?.id;
+    if (topLevelParentId) setCollapsedTopPageIds((current) => { const next = new Set(current); next.delete(topLevelParentId); return next; });
     setPages((current) => [...current, { id, name: parent ? `${parent.name} 하위 ${siblingCount + 1}` : `새 페이지 ${siblingCount + 1}`, icon: parent ? "→" : "□", iconTone: parent?.iconTone ?? "accent", parentId, widgets: [] }]);
     setActivePageId(id);
     setSelectedWidgetId(null);
@@ -1773,6 +1795,7 @@ export default function Home() {
     }
     const target = pages.find((page) => page.id === pageId);
     setPages(remaining);
+    setCollapsedTopPageIds((current) => new Set([...current].filter((id) => remaining.some((page) => page.id === id && remaining.some((child) => child.parentId === id)))));
     if (removing.has(activePageId)) setActivePageId(remaining[0].id);
     setSelectedWidgetId(null);
     setToast(`‘${target?.name ?? "페이지"}’${removing.size > 1 ? `와 하위 페이지 ${removing.size - 1}개를` : "를"} 삭제했습니다.`);
@@ -1822,8 +1845,16 @@ export default function Home() {
           <div className="user-block"><span className="avatar avatar-accent">YL</span><div><strong>워크스페이스</strong><span>관리자 모드</span></div><button>•••</button></div>
           <nav>
             <span className="nav-label">PAGES</span>
-            <span className="nav-helper">각 페이지의 ＋로 하위 페이지 추가</span>
-            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
+            <span className="nav-helper">최상위 페이지의 화살표로 하위 목록 접기</span>
+            {pageTree.map(({ page, depth }) => {
+              const hasChildren = depth === 0 && pages.some((child) => child.parentId === page.id);
+              const collapsed = hasChildren && collapsedTopPageIds.has(page.id);
+              return <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""} ${hasChildren ? "has-children" : ""} ${collapsed ? "is-collapsed" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}>
+                {hasChildren && <button className="page-collapse-toggle" type="button" aria-expanded={!collapsed} aria-label={`${page.name} 하위 페이지 ${collapsed ? "펼치기" : "접기"}`} title={`하위 페이지 ${collapsed ? "펼치기" : "접기"}`} onClick={() => toggleTopPageCollapse(page.id)}><span>›</span></button>}
+                <button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button>
+                <div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div>
+              </div>;
+            })}
             <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
           <div className={`sidebar-bottom status-${serverStatus}`}><span><i /> {serverStatus === "online" ? "공유 저장소 연결됨" : serverStatus === "connecting" ? "공유 저장소 연결 중" : "공유 저장소 오프라인"}</span><small>{serverStatus === "online" ? "이름으로 저장하면 모든 사용자에게 표시" : "임시 초안은 이 기기에 안전하게 유지"}</small></div>
