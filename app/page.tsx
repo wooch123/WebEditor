@@ -93,6 +93,27 @@ function clampFontSize(value: number) {
   return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, value));
 }
 
+type ServerStatus = "connecting" | "online" | "offline";
+const SHARED_LAYOUTS_ENDPOINT = "/editor/api/layouts";
+
+async function readSharedLayoutResponse(response: Response): Promise<{ layouts: SavedLayout[]; error?: string }> {
+  const payload = await response.json().catch(() => ({})) as { layouts?: SavedLayout[]; error?: string };
+  if (!response.ok) throw new Error(payload.error || "공유 저장소 요청에 실패했습니다.");
+  return { layouts: Array.isArray(payload.layouts) ? payload.layouts : [], error: payload.error };
+}
+
+async function requestSharedLayouts() {
+  return readSharedLayoutResponse(await fetch(SHARED_LAYOUTS_ENDPOINT, { cache: "no-store" }));
+}
+
+async function persistSharedLayout(layout: SavedLayout) {
+  return readSharedLayoutResponse(await fetch(SHARED_LAYOUTS_ENDPOINT, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(layout),
+  }));
+}
+
 const THEMES: Theme[] = [
   { id: "violet-night", name: "Violet Night", mode: "dark", bg: "#14151b", sidebar: "#191a21", panel: "#202128", surface: "#272830", elevated: "#30313b", line: "#393a45", text: "#f5f3ff", muted: "#9b9aa8", accent: "#a970ff", accent2: "#28c9d8", positive: "#45d394" },
   { id: "ocean-dark", name: "Ocean Dark", mode: "dark", bg: "#07151d", sidebar: "#0a1b25", panel: "#102630", surface: "#16323d", elevated: "#1d404b", line: "#28505b", text: "#edfaff", muted: "#89aab5", accent: "#23b5d3", accent2: "#6ae4b9", positive: "#52d6a3" },
@@ -1057,6 +1078,8 @@ export default function Home() {
   const [iconQuery, setIconQuery] = useState("");
   const [iconCategory, setIconCategory] = useState("전체");
   const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>([]);
+  const [serverStatus, setServerStatus] = useState<ServerStatus>("connecting");
+  const [savingLayout, setSavingLayout] = useState(false);
   const [preview, setPreview] = useState(false);
   const [toast, setToast] = useState("");
   const [draggingWidgetId, setDraggingWidgetId] = useState<string | null>(null);
@@ -1121,9 +1144,11 @@ export default function Home() {
   } as CSSProperties;
 
   useEffect(() => {
+    let cancelled = false;
+    let legacyLayouts: SavedLayout[] = [];
     try {
-      const raw = localStorage.getItem("layoutlab:saves");
-      if (raw) setSavedLayouts(Object.values(JSON.parse(raw)) as SavedLayout[]);
+      const legacySaves = localStorage.getItem("layoutlab:saves");
+      if (legacySaves) legacyLayouts = Object.values(JSON.parse(legacySaves)) as SavedLayout[];
       const draft = localStorage.getItem("layoutlab:draft");
       if (draft) {
         const parsed = JSON.parse(draft) as SavedLayout;
@@ -1137,7 +1162,44 @@ export default function Home() {
       }
     } catch { /* 손상된 로컬 데이터는 기본 레이아웃으로 대체합니다. */ }
     hydrated.current = true;
+    void requestSharedLayouts().then(async ({ layouts }) => {
+      const sharedNames = new Set(layouts.map((layout) => layout.name));
+      const pendingMigration = legacyLayouts.filter((layout) => layout?.name && !sharedNames.has(layout.name));
+      for (const layout of pendingMigration) {
+        const result = await persistSharedLayout(layout);
+        layouts = result.layouts;
+      }
+      if (legacyLayouts.length > 0) {
+        localStorage.removeItem("layoutlab:saves");
+        localStorage.setItem("layoutlab:shared-migration", String(Date.now()));
+      }
+      if (cancelled) return;
+      setSavedLayouts(layouts);
+      setServerStatus("online");
+      if (pendingMigration.length > 0) setToast(`기존 로컬 레이아웃 ${pendingMigration.length}개를 서버로 이전했습니다.`);
+    }).catch(() => {
+      if (!cancelled) setServerStatus("offline");
+    });
+    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!loadOpen) return;
+    let cancelled = false;
+    const refresh = () => requestSharedLayouts().then(({ layouts }) => {
+      if (cancelled) return;
+      setSavedLayouts(layouts);
+      setServerStatus("online");
+    }).catch(() => {
+      if (!cancelled) setServerStatus("offline");
+    });
+    void refresh();
+    const timer = window.setInterval(refresh, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [loadOpen]);
 
   useEffect(() => {
     if (!hydrated.current) return;
@@ -1304,14 +1366,23 @@ export default function Home() {
     setToast(`‘${title}’ 요소를 삭제했습니다.`);
   };
 
-  const saveLayout = () => {
+  const saveLayout = async () => {
     const name = workspaceName.trim();
     if (!name) { setToast("저장할 레이아웃 이름을 입력해 주세요."); return; }
+    if (savedLayouts.some((item) => item.name === name) && !window.confirm(`공유 저장소의 ‘${name}’ 레이아웃을 덮어쓸까요?`)) return;
     const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, fontSize };
-    const next = [record, ...savedLayouts.filter((item) => item.name !== name)];
-    setSavedLayouts(next);
-    localStorage.setItem("layoutlab:saves", JSON.stringify(Object.fromEntries(next.map((item) => [item.name, item]))));
-    setToast(`‘${name}’ 레이아웃을 로컬에 저장했습니다.`);
+    setSavingLayout(true);
+    try {
+      const { layouts } = await persistSharedLayout(record);
+      setSavedLayouts(layouts);
+      setServerStatus("online");
+      setToast(`‘${name}’ 레이아웃을 서버에 공유 저장했습니다.`);
+    } catch (error) {
+      setServerStatus("offline");
+      setToast(error instanceof Error ? error.message : "서버 저장에 실패했습니다.");
+    } finally {
+      setSavingLayout(false);
+    }
   };
 
   const loadLayout = (layout: SavedLayout) => {
@@ -1325,10 +1396,17 @@ export default function Home() {
     setToast(`‘${layout.name}’ 레이아웃을 불러왔습니다.`);
   };
 
-  const deleteLayout = (name: string) => {
-    const next = savedLayouts.filter((item) => item.name !== name);
-    setSavedLayouts(next);
-    localStorage.setItem("layoutlab:saves", JSON.stringify(Object.fromEntries(next.map((item) => [item.name, item]))));
+  const deleteLayout = async (name: string) => {
+    if (!window.confirm(`공유 저장소에서 ‘${name}’ 레이아웃을 삭제할까요? 모든 사용자에게서 사라집니다.`)) return;
+    try {
+      const { layouts } = await readSharedLayoutResponse(await fetch(`${SHARED_LAYOUTS_ENDPOINT}?name=${encodeURIComponent(name)}`, { method: "DELETE" }));
+      setSavedLayouts(layouts);
+      setServerStatus("online");
+      setToast(`‘${name}’ 공유 레이아웃을 삭제했습니다.`);
+    } catch (error) {
+      setServerStatus("offline");
+      setToast(error instanceof Error ? error.message : "공유 레이아웃 삭제에 실패했습니다.");
+    }
   };
 
   const changeFontSize = (delta: number) => {
@@ -1375,14 +1453,14 @@ export default function Home() {
         <div className="brand"><span className="brand-mark"><i /><i /><i /></span><strong>Layout Lab</strong><em>WORKSPACE BUILDER</em></div>
         <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> 레이아웃 편집</span><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
         <div className="top-actions">
-          <span className="local-state"><i /> LOCAL</span>
+          <span className={`local-state server-state status-${serverStatus}`} title={serverStatus === "online" ? "서버 공유 저장소에 연결됨" : serverStatus === "connecting" ? "서버 공유 저장소 연결 중" : "서버 공유 저장소 연결 끊김"}><i /> {serverStatus === "online" ? "SHARED" : serverStatus === "connecting" ? "CONNECTING" : "OFFLINE"}</span>
           <div className="font-size-control" role="group" aria-label={`전체 글꼴 크기 조절 · ${MIN_FONT_SIZE}px에서 ${MAX_FONT_SIZE}px`}><button type="button" disabled={fontSize <= MIN_FONT_SIZE} onClick={() => changeFontSize(-1)} aria-label="전체 글꼴 한 단계 작게" title="글꼴 1px 작게">A−</button><output aria-live="polite" title={`허용 범위 ${MIN_FONT_SIZE}~${MAX_FONT_SIZE}px`}>{fontSize}px</output><button type="button" disabled={fontSize >= MAX_FONT_SIZE} onClick={() => changeFontSize(1)} aria-label="전체 글꼴 한 단계 크게" title="글꼴 1px 크게">A＋</button></div>
           <button className={`preview-button ${preview ? "active" : ""}`} onClick={() => { setPreview((value) => !value); setThemeOpen(false); setLoadOpen(false); }}>{preview ? "편집으로" : "미리보기"}</button>
           <div className="popover-wrap" ref={loadPopoverRef}>
             <button className="secondary-button" aria-haspopup="dialog" aria-expanded={loadOpen} title="저장된 레이아웃 불러오기" onClick={() => { setLoadOpen((value) => !value); setThemeOpen(false); }}>불러오기 <span>⌄</span></button>
-            {loadOpen && <div className="load-popover popover-panel" role="dialog" aria-label="저장된 레이아웃"><div className="popover-title"><span>SAVED LOCALLY</span><strong>저장된 레이아웃</strong></div>{savedLayouts.length === 0 ? <div className="empty-saves">아직 저장된 레이아웃이 없습니다.</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">L</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 삭제`}>×</button></div>)}</div>}
+            {loadOpen && <div className="load-popover popover-panel" role="dialog" aria-label="서버 공유 레이아웃"><div className="popover-title"><span>SHARED SERVER</span><strong>공유 레이아웃</strong><p>모든 접속자가 같은 목록을 확인합니다.</p></div>{savedLayouts.length === 0 ? <div className="empty-saves">{serverStatus === "connecting" ? "서버 목록을 불러오는 중입니다." : serverStatus === "offline" ? "서버에 연결할 수 없습니다. 잠시 후 다시 열어 주세요." : "아직 서버에 저장된 레이아웃이 없습니다."}</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">S</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 공유 레이아웃 삭제`}>×</button></div>)}</div>}
           </div>
-          <button className="save-button" title="현재 레이아웃 저장" onClick={saveLayout}>저장 <span>⌘S</span></button>
+          <button className="save-button" title="현재 레이아웃을 서버에 공유 저장" disabled={savingLayout} onClick={saveLayout}>{savingLayout ? "저장 중" : "저장"} <span>SERVER</span></button>
           <div className="popover-wrap" ref={themePopoverRef}>
             <button className="theme-button" aria-haspopup="dialog" aria-expanded={themeOpen} title="테마 선택" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{THEMES.length}</span></button>
             {themeOpen && <div className="theme-popover popover-panel" role="dialog" aria-label="테마 프리셋"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 {THEMES.length}가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div></div>}
@@ -1399,7 +1477,7 @@ export default function Home() {
             {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
             <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
-          <div className="sidebar-bottom"><span><i /> 자동 임시 저장</span><small>이 기기의 브라우저에 보관</small></div>
+          <div className={`sidebar-bottom status-${serverStatus}`}><span><i /> {serverStatus === "online" ? "공유 저장소 연결됨" : serverStatus === "connecting" ? "공유 저장소 연결 중" : "공유 저장소 오프라인"}</span><small>{serverStatus === "online" ? "이름으로 저장하면 모든 사용자에게 표시" : "임시 초안은 이 기기에 안전하게 유지"}</small></div>
         </aside>
 
         {!preview && <aside className="toolbox">

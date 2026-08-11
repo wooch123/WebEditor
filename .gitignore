@@ -39,3 +39,5 @@ yarn-error.log*
 /outputs/
 /work/
 /logs/
+/data/shared-layouts.json
+/data/shared-layouts.json.*.tmp

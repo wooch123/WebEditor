@@ -196,6 +196,7 @@ select:focus-visible,
   border-color: var(--accent);
   box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 22%, transparent);
 }
+.top-actions .save-button:disabled { opacity: .58; cursor: wait; transform: none; box-shadow: none; }
 
 .save-button span {
   font-size: calc(max(12px, 8px) + var(--font-step));
@@ -226,6 +227,11 @@ select:focus-visible,
   border-radius: 50%;
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--positive) 13%, transparent);
 }
+.server-state.status-connecting i,
+.sidebar-bottom.status-connecting span i { background: #e5ad47; box-shadow: 0 0 0 4px color-mix(in srgb, #e5ad47 14%, transparent); }
+.server-state.status-offline { color: #ff8492; }
+.server-state.status-offline i,
+.sidebar-bottom.status-offline span i { background: #ff7185; box-shadow: 0 0 0 4px color-mix(in srgb, #ff7185 14%, transparent); }
 
 .font-size-control { height: calc(36px + var(--density-step)); padding: 3px; display: grid; grid-template-columns: 33px 42px 33px; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 .top-actions .font-size-control button { width: 33px; height: calc(28px + var(--density-step)); padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: calc(max(12px, 10px) + var(--font-step)); }
@@ -1587,6 +1593,7 @@ select:focus-visible,
   .topbar .secondary-button span { margin: 0; font-size: calc(max(12px, 11px) + var(--font-step)); }
   .topbar .save-button { width: 42px; padding: 0; font-size: 0; }
   .topbar .save-button::before { content: "✓"; font-size: calc(max(12px, 11px) + var(--font-step)); }
+  .topbar .save-button:disabled::before { content: "…"; }
   .canvas-meta,
   .drag-hint,
   .sidebar-bottom small { display: none; }
