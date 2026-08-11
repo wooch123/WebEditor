@@ -381,7 +381,7 @@ function parseCustomTableColumns(settings: Record<string, string>): CustomTableC
       const rawWidth = Number(record.width);
       return {
         id,
-        label: typeof record.label === "string" && record.label.trim() ? record.label.slice(0, 30) : `열 ${index + 1}`,
+        label: typeof record.label === "string" ? record.label.slice(0, 30) : `열 ${index + 1}`,
         type,
         options,
         defaultValue: typeof record.defaultValue === "string" ? record.defaultValue : type === "checkbox" ? "false" : options[0] || "",
@@ -395,6 +395,10 @@ function parseCustomTableColumns(settings: Record<string, string>): CustomTableC
 
 function serializeCustomTableColumns(columns: CustomTableColumn[]) {
   return JSON.stringify(columns);
+}
+
+function customTableColumnAccessibleLabel(column: CustomTableColumn) {
+  return column.label.trim() || "이름 없는 열";
 }
 
 function newId(prefix: string) {
@@ -844,10 +848,10 @@ function CustomTablePreview({ settings, onColumnsChange }: { settings: Record<st
 
   const renderCell = (column: CustomTableColumn, row: CustomTableRow) => {
     const value = row.values[column.id];
-    if (column.type === "text") return <input type="text" value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${column.label} 텍스트 입력`} />;
+    if (column.type === "text") return <input type="text" value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${customTableColumnAccessibleLabel(column)} 텍스트 입력`} />;
     if (column.type === "checkbox") return <label className="table-check"><input type="checkbox" checked={Boolean(value)} onChange={(event) => updateCell(row.id, column.id, event.target.checked)} /><span>{value ? "선택" : "미선택"}</span></label>;
-    if (column.type === "date") return <input type="date" value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${column.label} 날짜 선택`} />;
-    if (column.type === "select") return <select value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${column.label} 선택`}>{column.options.length === 0 && <option value="">옵션 없음</option>}{column.options.map((option) => <option key={option}>{option}</option>)}</select>;
+    if (column.type === "date") return <input type="date" value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${customTableColumnAccessibleLabel(column)} 날짜 선택`} />;
+    if (column.type === "select") return <select value={String(value ?? "")} onChange={(event) => updateCell(row.id, column.id, event.target.value)} aria-label={`${customTableColumnAccessibleLabel(column)} 선택`}>{column.options.length === 0 && <option value="">옵션 없음</option>}{column.options.map((option) => <option key={option}>{option}</option>)}</select>;
     return <div className="table-radio">{column.options.length === 0 ? <small>옵션을 설정하세요</small> : column.options.map((option) => <label key={option}><input type="radio" name={`${column.id}-${row.id}`} checked={value === option} onChange={() => updateCell(row.id, column.id, option)} />{option}</label>)}</div>;
   };
 
@@ -856,7 +860,7 @@ function CustomTablePreview({ settings, onColumnsChange }: { settings: Record<st
       <div className="custom-table-toolbar"><span>{columns.length}개 열 · 머리글 순서 및 너비 조절</span><button onClick={addRow}>＋ 행 추가</button></div>
       <div className="custom-table-scroll">
         <div className="custom-table-row custom-table-head" style={gridStyle}>
-          {columns.map((column) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${column.label} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
+          {columns.map((column) => <div key={column.id} draggable onDragStart={() => setDraggedColumn(column.id)} onDragEnd={() => setDraggedColumn(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedColumn) moveColumn(draggedColumn, column.id); setDraggedColumn(null); }}><span>⠿ {column.label}</span><button type="button" className="column-resizer" draggable={false} onPointerDown={(event) => startColumnResize(event, column.id)} onPointerMove={trackColumnResize} onPointerUp={finishColumnResize} onPointerCancel={finishColumnResize} aria-label={`${customTableColumnAccessibleLabel(column)} 열 너비 조절`} title="좌우로 끌어 열 너비 조절" /></div>)}
           <span />
         </div>
         {rows.map((row) => <div className="custom-table-row" style={gridStyle} key={row.id}>{columns.map((column) => <div className={`custom-table-cell cell-${column.type}`} key={column.id}>{renderCell(column, row)}</div>)}<button className="table-row-delete" onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))} aria-label="행 삭제">×</button></div>)}
@@ -900,7 +904,7 @@ function CustomTableColumnDesigner({ settings, onChange }: { settings: Record<st
       <div className="table-column-list">
         {columns.map((column, index) => (
           <article className="table-column-config" key={column.id}>
-            <div className="table-column-config-top"><strong>열 {index + 1}</strong><div><button type="button" disabled={index === 0} onClick={() => moveColumn(index, -1)} aria-label={`${column.label} 위로 이동`}>↑</button><button type="button" disabled={index === columns.length - 1} onClick={() => moveColumn(index, 1)} aria-label={`${column.label} 아래로 이동`}>↓</button><button type="button" className="danger" disabled={columns.length === 1} onClick={() => onChange(columns.filter((item) => item.id !== column.id))} aria-label={`${column.label} 열 삭제`}>×</button></div></div>
+            <div className="table-column-config-top"><strong>열 {index + 1}</strong><div><button type="button" disabled={index === 0} onClick={() => moveColumn(index, -1)} aria-label={`${customTableColumnAccessibleLabel(column)} 위로 이동`}>↑</button><button type="button" disabled={index === columns.length - 1} onClick={() => moveColumn(index, 1)} aria-label={`${customTableColumnAccessibleLabel(column)} 아래로 이동`}>↓</button><button type="button" className="danger" disabled={columns.length === 1} onClick={() => onChange(columns.filter((item) => item.id !== column.id))} aria-label={`${customTableColumnAccessibleLabel(column)} 열 삭제`}>×</button></div></div>
             <label>열 이름<input value={column.label} maxLength={30} onChange={(event) => updateColumn(column.id, { label: event.target.value })} /></label>
             <div className="table-column-config-grid">
               <label>입력 유형<select value={column.type} onChange={(event) => changeType(column, event.target.value as CustomTableFieldType)}>{CUSTOM_TABLE_FIELD_TYPES.map((type) => <option value={type} key={type}>{CUSTOM_TABLE_TYPE_LABELS[type]}</option>)}</select></label>
