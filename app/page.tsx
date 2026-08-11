@@ -85,6 +85,14 @@ type DropTarget = {
   position: "before" | "after";
 };
 
+const MIN_FONT_SIZE = 8;
+const MAX_FONT_SIZE = 15;
+const DEFAULT_FONT_SIZE = 13;
+
+function clampFontSize(value: number) {
+  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, value));
+}
+
 const THEMES: Theme[] = [
   { id: "violet-night", name: "Violet Night", mode: "dark", bg: "#14151b", sidebar: "#191a21", panel: "#202128", surface: "#272830", elevated: "#30313b", line: "#393a45", text: "#f5f3ff", muted: "#9b9aa8", accent: "#a970ff", accent2: "#28c9d8", positive: "#45d394" },
   { id: "ocean-dark", name: "Ocean Dark", mode: "dark", bg: "#07151d", sidebar: "#0a1b25", panel: "#102630", surface: "#16323d", elevated: "#1d404b", line: "#28505b", text: "#edfaff", muted: "#89aab5", accent: "#23b5d3", accent2: "#6ae4b9", positive: "#52d6a3" },
@@ -1040,7 +1048,7 @@ export default function Home() {
   const [pages, setPages] = useState<Page[]>(INITIAL_PAGES);
   const [activePageId, setActivePageId] = useState(INITIAL_PAGES[0].id);
   const [themeId, setThemeId] = useState(THEMES[0].id);
-  const [fontSize, setFontSize] = useState(13);
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
   const [workspaceName, setWorkspaceName] = useState("업무 포털 v1");
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -1108,6 +1116,7 @@ export default function Home() {
     "--accent-2": theme.accent2,
     "--positive": theme.positive,
     "--font-step": `${fontSize - 12}px`,
+    "--density-step": `${Math.max(0, fontSize - DEFAULT_FONT_SIZE)}px`,
     colorScheme: theme.mode,
   } as CSSProperties;
 
@@ -1122,7 +1131,7 @@ export default function Home() {
           setPages(parsed.pages);
           setActivePageId(parsed.pages[0].id);
           setThemeId(parsed.themeId);
-          setFontSize(Math.max(12, Math.min(14, parsed.fontSize ?? 13)));
+          setFontSize(clampFontSize(parsed.fontSize ?? DEFAULT_FONT_SIZE));
           setWorkspaceName(parsed.name);
         }
       }
@@ -1161,6 +1170,18 @@ export default function Home() {
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
   }, [themeOpen]);
+
+  useEffect(() => {
+    if (!loadOpen && !themeOpen) return;
+    const closePopoversOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setLoadOpen(false);
+        setThemeOpen(false);
+      }
+    };
+    document.addEventListener("keydown", closePopoversOnEscape);
+    return () => document.removeEventListener("keydown", closePopoversOnEscape);
+  }, [loadOpen, themeOpen]);
 
   useEffect(() => {
     if (!iconPickerPageId) return;
@@ -1297,7 +1318,7 @@ export default function Home() {
     setPages(layout.pages);
     setActivePageId(layout.pages[0].id);
     setThemeId(layout.themeId);
-    setFontSize(Math.max(12, Math.min(14, layout.fontSize ?? 13)));
+    setFontSize(clampFontSize(layout.fontSize ?? DEFAULT_FONT_SIZE));
     setWorkspaceName(layout.name);
     setSelectedWidgetId(null);
     setLoadOpen(false);
@@ -1311,7 +1332,7 @@ export default function Home() {
   };
 
   const changeFontSize = (delta: number) => {
-    setFontSize((current) => Math.max(12, Math.min(14, current + delta)));
+    setFontSize((current) => clampFontSize(current + delta));
   };
 
   const addPage = (parentId: string | null = null) => {
@@ -1355,16 +1376,16 @@ export default function Home() {
         <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> 레이아웃 편집</span><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
         <div className="top-actions">
           <span className="local-state"><i /> LOCAL</span>
-          <div className="font-size-control" role="group" aria-label="전체 글꼴 크기 조절"><button type="button" disabled={fontSize <= 12} onClick={() => changeFontSize(-1)} aria-label="전체 글꼴 한 단계 작게" title="글꼴 1px 작게">A−</button><output aria-live="polite">{fontSize}px</output><button type="button" disabled={fontSize >= 14} onClick={() => changeFontSize(1)} aria-label="전체 글꼴 한 단계 크게" title="글꼴 1px 크게">A＋</button></div>
+          <div className="font-size-control" role="group" aria-label={`전체 글꼴 크기 조절 · ${MIN_FONT_SIZE}px에서 ${MAX_FONT_SIZE}px`}><button type="button" disabled={fontSize <= MIN_FONT_SIZE} onClick={() => changeFontSize(-1)} aria-label="전체 글꼴 한 단계 작게" title="글꼴 1px 작게">A−</button><output aria-live="polite" title={`허용 범위 ${MIN_FONT_SIZE}~${MAX_FONT_SIZE}px`}>{fontSize}px</output><button type="button" disabled={fontSize >= MAX_FONT_SIZE} onClick={() => changeFontSize(1)} aria-label="전체 글꼴 한 단계 크게" title="글꼴 1px 크게">A＋</button></div>
           <button className={`preview-button ${preview ? "active" : ""}`} onClick={() => { setPreview((value) => !value); setThemeOpen(false); setLoadOpen(false); }}>{preview ? "편집으로" : "미리보기"}</button>
           <div className="popover-wrap" ref={loadPopoverRef}>
-            <button className="secondary-button" onClick={() => { setLoadOpen((value) => !value); setThemeOpen(false); }}>불러오기 <span>⌄</span></button>
-            {loadOpen && <div className="load-popover popover-panel"><div className="popover-title"><span>SAVED LOCALLY</span><strong>저장된 레이아웃</strong></div>{savedLayouts.length === 0 ? <div className="empty-saves">아직 저장된 레이아웃이 없습니다.</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">L</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 삭제`}>×</button></div>)}</div>}
+            <button className="secondary-button" aria-haspopup="dialog" aria-expanded={loadOpen} title="저장된 레이아웃 불러오기" onClick={() => { setLoadOpen((value) => !value); setThemeOpen(false); }}>불러오기 <span>⌄</span></button>
+            {loadOpen && <div className="load-popover popover-panel" role="dialog" aria-label="저장된 레이아웃"><div className="popover-title"><span>SAVED LOCALLY</span><strong>저장된 레이아웃</strong></div>{savedLayouts.length === 0 ? <div className="empty-saves">아직 저장된 레이아웃이 없습니다.</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">L</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 삭제`}>×</button></div>)}</div>}
           </div>
-          <button className="save-button" onClick={saveLayout}>저장 <span>⌘S</span></button>
+          <button className="save-button" title="현재 레이아웃 저장" onClick={saveLayout}>저장 <span>⌘S</span></button>
           <div className="popover-wrap" ref={themePopoverRef}>
-            <button className="theme-button" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{THEMES.length}</span></button>
-            {themeOpen && <div className="theme-popover popover-panel"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 {THEMES.length}가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div></div>}
+            <button className="theme-button" aria-haspopup="dialog" aria-expanded={themeOpen} title="테마 선택" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{THEMES.length}</span></button>
+            {themeOpen && <div className="theme-popover popover-panel" role="dialog" aria-label="테마 프리셋"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 {THEMES.length}가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div></div>}
           </div>
         </div>
       </header>
@@ -1375,7 +1396,7 @@ export default function Home() {
           <nav>
             <span className="nav-label">PAGES</span>
             <span className="nav-helper">각 페이지의 ＋로 하위 페이지 추가</span>
-            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
+            {pageTree.map(({ page, depth }) => <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}><button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button><div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div></div>)}
             <button className="add-page" onClick={() => addPage(null)}><span>＋</span><b>최상위 페이지 추가</b></button>
           </nav>
           <div className="sidebar-bottom"><span><i /> 자동 임시 저장</span><small>이 기기의 브라우저에 보관</small></div>
