@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 const API_PATH = "/editor/api/layouts";
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 const MAX_LAYOUTS = 200;
+const THEME_COLOR_KEYS = ["bg", "sidebar", "panel", "surface", "elevated", "line", "text", "muted", "accent", "accent2", "positive"];
 
 function sendJson(response, status, payload) {
   const body = JSON.stringify(payload);
@@ -32,6 +33,21 @@ async function readJsonBody(request) {
   }
 }
 
+function normalizeCustomTheme(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw Object.assign(new Error("커스텀 테마 데이터가 올바르지 않습니다."), { status: 400 });
+  const theme = {
+    id: "custom",
+    name: "Custom Theme",
+    mode: value.mode === "light" ? "light" : "dark",
+  };
+  for (const key of THEME_COLOR_KEYS) {
+    const color = typeof value[key] === "string" ? value[key].trim() : "";
+    if (!/^#[0-9a-f]{6}$/i.test(color)) throw Object.assign(new Error(`커스텀 테마의 ${key} 색상값이 올바르지 않습니다.`), { status: 400 });
+    theme[key] = color.toLowerCase();
+  }
+  return theme;
+}
+
 function normalizeLayout(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw Object.assign(new Error("레이아웃 형식이 올바르지 않습니다."), { status: 400 });
   const name = typeof value.name === "string" ? value.name.trim() : "";
@@ -40,7 +56,8 @@ function normalizeLayout(value) {
   if (typeof value.themeId !== "string" || value.themeId.length > 100) throw Object.assign(new Error("테마 데이터가 올바르지 않습니다."), { status: 400 });
   const updatedAt = Number.isFinite(Number(value.updatedAt)) ? Number(value.updatedAt) : Date.now();
   const fontSize = Number.isFinite(Number(value.fontSize)) ? Math.max(8, Math.min(15, Number(value.fontSize))) : 13;
-  return { name, updatedAt, pages: value.pages, themeId: value.themeId, fontSize };
+  const customTheme = value.themeId === "custom" ? normalizeCustomTheme(value.customTheme) : undefined;
+  return { name, updatedAt, pages: value.pages, themeId: value.themeId, ...(customTheme ? { customTheme } : {}), fontSize };
 }
 
 export function createSharedLayoutStore(storagePath) {

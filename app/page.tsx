@@ -72,11 +72,14 @@ type Theme = {
   positive: string;
 };
 
+type ThemeColorKey = "bg" | "sidebar" | "panel" | "surface" | "elevated" | "line" | "text" | "muted" | "accent" | "accent2" | "positive";
+
 type SavedLayout = {
   name: string;
   updatedAt: number;
   pages: Page[];
   themeId: string;
+  customTheme?: Theme;
   fontSize?: number;
 };
 
@@ -156,6 +159,27 @@ const THEMES: Theme[] = [
   { id: "platinum-light", name: "Platinum Light", mode: "light", isNew: true, bg: "#eceff1", sidebar: "#f9fafb", panel: "#f4f6f7", surface: "#ffffff", elevated: "#dfe3e6", line: "#ccd2d6", text: "#22272b", muted: "#6f7880", accent: "#48525b", accent2: "#87919a", positive: "#308661" },
   { id: "concrete-day", name: "Concrete Day", mode: "light", isNew: true, bg: "#e9eaeb", sidebar: "#f7f7f7", panel: "#f1f2f2", surface: "#fcfcfc", elevated: "#dcdee0", line: "#c9cccf", text: "#27292c", muted: "#73777b", accent: "#50555a", accent2: "#898f95", positive: "#338762" },
 ];
+
+const CUSTOM_THEME_ID = "custom";
+const THEME_COLOR_FIELDS: Array<{ key: ThemeColorKey; label: string }> = [
+  { key: "bg", label: "전체 배경" },
+  { key: "sidebar", label: "사이드바" },
+  { key: "panel", label: "패널" },
+  { key: "surface", label: "카드" },
+  { key: "elevated", label: "강조 레이어" },
+  { key: "line", label: "구분선" },
+  { key: "text", label: "기본 텍스트" },
+  { key: "muted", label: "보조 텍스트" },
+  { key: "accent", label: "주 강조색" },
+  { key: "accent2", label: "보조 강조색" },
+  { key: "positive", label: "성공 상태" },
+];
+
+function createCustomTheme(source: Theme): Theme {
+  return { ...source, id: CUSTOM_THEME_ID, name: "Custom Theme", isNew: false };
+}
+
+const DEFAULT_CUSTOM_THEME = createCustomTheme(THEMES[0]);
 
 const PAGE_ICON_GROUPS = [
   { category: "기본", icons: [["⌂", "홈"], ["⌘", "워크스페이스"], ["☰", "메뉴"], ["▦", "대시보드"], ["▤", "목록"], ["▥", "패널"], ["▧", "레이아웃"], ["▨", "타일"], ["▩", "그리드"], ["□", "페이지"], ["◇", "프로젝트"], ["○", "개요"]] },
@@ -1069,10 +1093,12 @@ export default function Home() {
   const [pages, setPages] = useState<Page[]>(INITIAL_PAGES);
   const [activePageId, setActivePageId] = useState(INITIAL_PAGES[0].id);
   const [themeId, setThemeId] = useState(THEMES[0].id);
+  const [customTheme, setCustomTheme] = useState<Theme>(DEFAULT_CUSTOM_THEME);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
   const [workspaceName, setWorkspaceName] = useState("업무 포털 v1");
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [customEditorOpen, setCustomEditorOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [iconPickerPageId, setIconPickerPageId] = useState<string | null>(null);
   const [iconQuery, setIconQuery] = useState("");
@@ -1092,7 +1118,7 @@ export default function Home() {
 
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
   const iconPickerPage = pages.find((page) => page.id === iconPickerPageId);
-  const theme = THEMES.find((item) => item.id === themeId) ?? THEMES[0];
+  const theme = themeId === CUSTOM_THEME_ID ? customTheme : THEMES.find((item) => item.id === themeId) ?? THEMES[0];
   const filteredPageIcons = useMemo(() => {
     const query = iconQuery.trim().toLocaleLowerCase("ko-KR");
     return PAGE_ICONS.filter((icon) =>
@@ -1155,7 +1181,16 @@ export default function Home() {
         if (parsed.pages?.length) {
           setPages(parsed.pages);
           setActivePageId(parsed.pages[0].id);
-          setThemeId(parsed.themeId);
+          if (parsed.themeId === CUSTOM_THEME_ID) {
+            if (parsed.customTheme) {
+              setCustomTheme(createCustomTheme(parsed.customTheme));
+              setThemeId(CUSTOM_THEME_ID);
+            } else {
+              setThemeId(THEMES[0].id);
+            }
+          } else {
+            setThemeId(parsed.themeId);
+          }
           setFontSize(clampFontSize(parsed.fontSize ?? DEFAULT_FONT_SIZE));
           setWorkspaceName(parsed.name);
         }
@@ -1204,10 +1239,10 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated.current) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, fontSize }));
+      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize }));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [pages, themeId, workspaceName, fontSize]);
+  }, [pages, themeId, customTheme, workspaceName, fontSize]);
 
   useEffect(() => {
     if (!toast) return;
@@ -1370,7 +1405,7 @@ export default function Home() {
     const name = workspaceName.trim();
     if (!name) { setToast("저장할 레이아웃 이름을 입력해 주세요."); return; }
     if (savedLayouts.some((item) => item.name === name) && !window.confirm(`공유 저장소의 ‘${name}’ 레이아웃을 덮어쓸까요?`)) return;
-    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, fontSize };
+    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize };
     setSavingLayout(true);
     try {
       const { layouts } = await persistSharedLayout(record);
@@ -1388,7 +1423,16 @@ export default function Home() {
   const loadLayout = (layout: SavedLayout) => {
     setPages(layout.pages);
     setActivePageId(layout.pages[0].id);
-    setThemeId(layout.themeId);
+    if (layout.themeId === CUSTOM_THEME_ID) {
+      if (layout.customTheme) {
+        setCustomTheme(createCustomTheme(layout.customTheme));
+        setThemeId(CUSTOM_THEME_ID);
+      } else {
+        setThemeId(THEMES[0].id);
+      }
+    } else {
+      setThemeId(layout.themeId);
+    }
     setFontSize(clampFontSize(layout.fontSize ?? DEFAULT_FONT_SIZE));
     setWorkspaceName(layout.name);
     setSelectedWidgetId(null);
@@ -1411,6 +1455,29 @@ export default function Home() {
 
   const changeFontSize = (delta: number) => {
     setFontSize((current) => clampFontSize(current + delta));
+  };
+
+  const useCurrentThemeAsCustom = () => {
+    setCustomTheme(createCustomTheme(theme));
+    setThemeId(CUSTOM_THEME_ID);
+    setCustomEditorOpen(true);
+    setToast("현재 테마를 기준으로 커스텀 편집을 시작합니다.");
+  };
+
+  const updateCustomThemeColor = (key: ThemeColorKey, value: string) => {
+    setCustomTheme((current) => ({ ...current, [key]: value }));
+    setThemeId(CUSTOM_THEME_ID);
+  };
+
+  const updateCustomThemeMode = (mode: Theme["mode"]) => {
+    setCustomTheme((current) => ({ ...current, mode }));
+    setThemeId(CUSTOM_THEME_ID);
+  };
+
+  const resetCustomTheme = () => {
+    setCustomTheme(DEFAULT_CUSTOM_THEME);
+    setThemeId(CUSTOM_THEME_ID);
+    setToast("커스텀 테마를 기본값으로 초기화했습니다.");
   };
 
   const addPage = (parentId: string | null = null) => {
@@ -1462,8 +1529,26 @@ export default function Home() {
           </div>
           <button className="save-button" title="현재 레이아웃을 서버에 공유 저장" disabled={savingLayout} onClick={saveLayout}>{savingLayout ? "저장 중" : "저장"} <span>SERVER</span></button>
           <div className="popover-wrap" ref={themePopoverRef}>
-            <button className="theme-button" aria-haspopup="dialog" aria-expanded={themeOpen} title="테마 선택" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{THEMES.length}</span></button>
-            {themeOpen && <div className="theme-popover popover-panel" role="dialog" aria-label="테마 프리셋"><div className="popover-title"><span>THEME PRESETS</span><strong>통일감 있는 {THEMES.length}가지 테마</strong><p>레이어 대비와 가독성을 기준으로 구성했습니다.</p></div><div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div></div>}
+            <button className="theme-button" aria-haspopup="dialog" aria-expanded={themeOpen} title="테마 선택 및 커스텀 편집" onClick={() => { setThemeOpen((value) => !value); setLoadOpen(false); }} aria-label="테마 선택 및 커스텀 편집"><i style={{ background: theme.accent }} /><i style={{ background: theme.accent2 }} /><span>{themeId === CUSTOM_THEME_ID ? "C" : THEMES.length}</span></button>
+            {themeOpen && <div className="theme-popover popover-panel" role="dialog" aria-label="테마 선택 및 커스텀 편집">
+              <div className="popover-title"><span>THEME STUDIO</span><strong>테마 프리셋 · 커스텀</strong><p>가로 스크롤 없이 아래로 내려 모든 테마와 색상을 확인할 수 있습니다.</p></div>
+              <section className={`custom-theme-editor ${themeId === CUSTOM_THEME_ID ? "active" : ""}`}>
+                <button type="button" className="custom-theme-toggle" aria-expanded={customEditorOpen} onClick={() => setCustomEditorOpen((value) => !value)}>
+                  <span className="custom-theme-swatches" aria-hidden="true"><i style={{ background: customTheme.bg }} /><i style={{ background: customTheme.accent }} /><i style={{ background: customTheme.accent2 }} /></span>
+                  <span><strong>커스텀 테마</strong><small>{themeId === CUSTOM_THEME_ID ? "현재 적용 중" : "컬러 피커로 직접 구성"}</small></span>
+                  <b aria-hidden="true">{customEditorOpen ? "−" : "+"}</b>
+                </button>
+                {customEditorOpen && <div className="custom-theme-body">
+                  <div className="custom-theme-toolbar">
+                    <div className="custom-mode-switch" role="group" aria-label="커스텀 테마 밝기 모드"><button type="button" className={customTheme.mode === "dark" ? "active" : ""} onClick={() => updateCustomThemeMode("dark")}>다크</button><button type="button" className={customTheme.mode === "light" ? "active" : ""} onClick={() => updateCustomThemeMode("light")}>라이트</button></div>
+                    <div className="custom-theme-actions"><button type="button" onClick={useCurrentThemeAsCustom}>현재 테마로 시작</button><button type="button" onClick={resetCustomTheme}>초기화</button></div>
+                  </div>
+                  <div className="theme-color-grid">{THEME_COLOR_FIELDS.map((field) => <label className="theme-color-field" key={field.key}><span>{field.label}</span><span className="theme-color-control"><input type="color" value={customTheme[field.key]} onChange={(event) => updateCustomThemeColor(field.key, event.target.value)} aria-label={`${field.label} 색상 선택`} /><output>{customTheme[field.key].toUpperCase()}</output></span></label>)}</div>
+                </div>}
+              </section>
+              <div className="theme-section-label"><span>PRESETS</span><b>{THEMES.length}가지</b></div>
+              <div className="theme-grid">{THEMES.map((item) => <button key={item.id} className={themeId === item.id ? "active" : ""} onClick={() => setThemeId(item.id)}><span className="theme-preview" style={{ background: item.bg }}><i style={{ background: item.sidebar }} /><b style={{ background: item.accent }} /><em style={{ background: item.accent2 }} /></span><span className="theme-name">{item.name}{item.isNew && <em>NEW</em>}</span></button>)}</div>
+            </div>}
           </div>
         </div>
       </header>
