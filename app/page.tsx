@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { SystemDesigner } from "./system-designer/SystemDesigner";
+import { createDemoSystemProject } from "./system-designer/demo";
+import type { SystemNode, SystemProject } from "./system-designer/types";
 
 type WidgetType =
   | "hero"
@@ -115,6 +118,8 @@ type SavedLayout = {
   fontSize?: number;
   pagePanelPosition?: PagePanelPosition;
   pagePanelSize?: number;
+  workspaceMode?: WorkspaceMode;
+  systemProject?: SystemProject;
 };
 
 type DropTarget = {
@@ -126,6 +131,7 @@ const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 15;
 const DEFAULT_FONT_SIZE = 13;
 type PagePanelPosition = "left" | "top" | "right";
+type WorkspaceMode = "layout" | "system";
 const DEFAULT_PAGE_PANEL_SIZE = 236;
 const MIN_PAGE_PANEL_WIDTH = 200;
 const MAX_PAGE_PANEL_WIDTH = 420;
@@ -1373,6 +1379,8 @@ export default function Home() {
   const [pagePanelPosition, setPagePanelPosition] = useState<PagePanelPosition>("left");
   const [pagePanelSize, setPagePanelSize] = useState(DEFAULT_PAGE_PANEL_SIZE);
   const [workspaceName, setWorkspaceName] = useState("업무 포털 v1");
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("layout");
+  const [systemProject, setSystemProject] = useState<SystemProject>(() => createDemoSystemProject());
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [customEditorOpen, setCustomEditorOpen] = useState(false);
@@ -1501,6 +1509,8 @@ export default function Home() {
           setPagePanelPosition(parsedPanelPosition);
           setPagePanelSize(clampPagePanelSize(parsed.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE));
           setWorkspaceName(parsed.name);
+          if (parsed.systemProject?.version === 1) setSystemProject(parsed.systemProject);
+          if (parsed.workspaceMode === "system") setWorkspaceMode("system");
         }
       }
     } catch { /* 손상된 로컬 데이터는 기본 레이아웃으로 대체합니다. */ }
@@ -1547,10 +1557,10 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated.current) return;
     const timer = window.setTimeout(() => {
-      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize, pagePanelPosition, pagePanelSize }));
+      localStorage.setItem("layoutlab:draft", JSON.stringify({ name: workspaceName, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize, pagePanelPosition, pagePanelSize, workspaceMode, systemProject }));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [pages, themeId, customTheme, workspaceName, fontSize, pagePanelPosition, pagePanelSize]);
+  }, [pages, themeId, customTheme, workspaceName, fontSize, pagePanelPosition, pagePanelSize, workspaceMode, systemProject]);
 
   useEffect(() => {
     if (!toast) return;
@@ -1713,7 +1723,7 @@ export default function Home() {
     const name = workspaceName.trim();
     if (!name) { setToast("저장할 레이아웃 이름을 입력해 주세요."); return; }
     if (savedLayouts.some((item) => item.name === name) && !window.confirm(`공유 저장소의 ‘${name}’ 레이아웃을 덮어쓸까요?`)) return;
-    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize, pagePanelPosition, pagePanelSize };
+    const record: SavedLayout = { name, updatedAt: Date.now(), pages, themeId, customTheme: themeId === CUSTOM_THEME_ID ? customTheme : undefined, fontSize, pagePanelPosition, pagePanelSize, workspaceMode, systemProject };
     setSavingLayout(true);
     try {
       const { layouts } = await persistSharedLayout(record);
@@ -1747,6 +1757,9 @@ export default function Home() {
     setPagePanelPosition(loadedPanelPosition);
     setPagePanelSize(clampPagePanelSize(layout.pagePanelSize ?? DEFAULT_PAGE_PANEL_SIZE));
     setWorkspaceName(layout.name);
+    if (layout.systemProject?.version === 1) setSystemProject(layout.systemProject);
+    setWorkspaceMode(layout.workspaceMode === "system" ? "system" : "layout");
+    setPreview(false);
     setSelectedWidgetId(null);
     setLoadOpen(false);
     setToast(`‘${layout.name}’ 레이아웃을 불러왔습니다.`);
@@ -1873,15 +1886,32 @@ export default function Home() {
     setToast(`‘${target?.name ?? "페이지"}’${removing.size > 1 ? `와 하위 페이지 ${removing.size - 1}개를` : "를"} 삭제했습니다.`);
   };
 
+  const openSystemPageInEditor = (node: SystemNode) => {
+    const linkedId = node.metadata.layoutPageId;
+    const existing = pages.find((page) => page.id === linkedId) ?? pages.find((page) => page.name.toLocaleLowerCase("ko-KR") === node.name.toLocaleLowerCase("ko-KR"));
+    if (existing) {
+      setActivePageId(existing.id);
+    } else {
+      const id = newId("page");
+      setPages((current) => [...current, { id, name: node.name, icon: "▣", iconTone: "accent", parentId: null, widgets: [] }]);
+      setActivePageId(id);
+      setSystemProject((current) => ({ ...current, updatedAt: Date.now(), nodes: current.nodes.map((item) => item.id === node.id ? { ...item, metadata: { ...item.metadata, layoutPageId: id } } : item) }));
+      setToast(`‘${node.name}’ 페이지 캔버스를 생성했습니다.`);
+    }
+    setSelectedWidgetId(null);
+    setPreview(false);
+    setWorkspaceMode("layout");
+  };
+
   return (
-    <main className={`layout-app page-panel-${pagePanelPosition} ${preview ? "preview-mode" : ""} ${draggingWidgetId ? "reordering" : ""}`} style={themeStyle} data-mode={theme.mode}>
+    <main className={`layout-app page-panel-${pagePanelPosition} workspace-mode-${workspaceMode} ${preview ? "preview-mode" : ""} ${draggingWidgetId ? "reordering" : ""}`} style={themeStyle} data-mode={theme.mode}>
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><i /><i /><i /></span><strong>Layout Lab</strong><em>WORKSPACE BUILDER</em></div>
-        <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> 레이아웃 편집</span><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
+        <div className="topbar-context"><span className="breadcrumb">시스템 설계 <b>/</b> {workspaceMode === "system" ? "아키텍처 설계" : "레이아웃 편집"}</span><div className="workspace-mode-switch" role="tablist" aria-label="작업 모드 선택"><button role="tab" aria-selected={workspaceMode === "layout"} className={workspaceMode === "layout" ? "active" : ""} onClick={() => setWorkspaceMode("layout")}><i>◇</i> 페이지 편집</button><button role="tab" aria-selected={workspaceMode === "system"} className={workspaceMode === "system" ? "active" : ""} onClick={() => { setWorkspaceMode("system"); setPreview(false); setSelectedWidgetId(null); }}><i>⌁</i> 시스템 설계</button></div><label className="workspace-name"><span>프로젝트 이름</span><input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} /></label></div>
         <div className="top-actions">
           <span className={`local-state server-state status-${serverStatus}`} title={serverStatus === "online" ? "서버 공유 저장소에 연결됨" : serverStatus === "connecting" ? "서버 공유 저장소 연결 중" : "서버 공유 저장소 연결 끊김"}><i /> {serverStatus === "online" ? "SHARED" : serverStatus === "connecting" ? "CONNECTING" : "OFFLINE"}</span>
           <div className="font-size-control" role="group" aria-label={`전체 글꼴 크기 조절 · ${MIN_FONT_SIZE}px에서 ${MAX_FONT_SIZE}px`}><button type="button" disabled={fontSize <= MIN_FONT_SIZE} onClick={() => changeFontSize(-1)} aria-label="전체 글꼴 한 단계 작게" title="글꼴 1px 작게">A−</button><output aria-live="polite" title={`허용 범위 ${MIN_FONT_SIZE}~${MAX_FONT_SIZE}px`}>{fontSize}px</output><button type="button" disabled={fontSize >= MAX_FONT_SIZE} onClick={() => changeFontSize(1)} aria-label="전체 글꼴 한 단계 크게" title="글꼴 1px 크게">A＋</button></div>
-          <button className={`preview-button ${preview ? "active" : ""}`} onClick={() => { setPreview((value) => !value); setThemeOpen(false); setLoadOpen(false); }}>{preview ? "편집으로" : "미리보기"}</button>
+          {workspaceMode === "layout" && <button className={`preview-button ${preview ? "active" : ""}`} onClick={() => { setPreview((value) => !value); setThemeOpen(false); setLoadOpen(false); }}>{preview ? "편집으로" : "미리보기"}</button>}
           <div className="popover-wrap" ref={loadPopoverRef}>
             <button className="secondary-button" aria-haspopup="dialog" aria-expanded={loadOpen} title="저장된 레이아웃 불러오기" onClick={() => { setLoadOpen((value) => !value); setThemeOpen(false); }}>불러오기 <span>⌄</span></button>
             {loadOpen && <div className="load-popover popover-panel" role="dialog" aria-label="서버 공유 레이아웃"><div className="popover-title"><span>SHARED SERVER</span><strong>공유 레이아웃</strong><p>모든 접속자가 같은 목록을 확인합니다.</p></div>{savedLayouts.length === 0 ? <div className="empty-saves">{serverStatus === "connecting" ? "서버 목록을 불러오는 중입니다." : serverStatus === "offline" ? "서버에 연결할 수 없습니다. 잠시 후 다시 열어 주세요." : "아직 서버에 저장된 레이아웃이 없습니다."}</div> : savedLayouts.map((layout) => <div className="save-row" key={layout.name}><button onClick={() => loadLayout(layout)}><span className="save-icon">S</span><span><strong>{layout.name}</strong><small>{new Date(layout.updatedAt).toLocaleString("ko-KR")}</small></span></button><button className="save-delete" onClick={() => deleteLayout(layout.name)} aria-label={`${layout.name} 공유 레이아웃 삭제`}>×</button></div>)}</div>}
@@ -1912,7 +1942,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="app-body">
+      {workspaceMode === "system" ? <SystemDesigner project={systemProject} onChange={setSystemProject} onOpenPage={openSystemPageInEditor} onToast={setToast} /> : <div className="app-body">
         <aside className="page-sidebar">
           <div className="page-panel-controls">
             <span>PAGE AREA <output>{pagePanelSize}px</output></span>
@@ -1998,7 +2028,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-      </div>
+      </div>}
       {iconPickerPage && <div className="icon-picker-backdrop" onPointerDown={() => setIconPickerPageId(null)}>
         <section className="icon-picker" role="dialog" aria-modal="true" aria-labelledby="icon-picker-title" onPointerDown={(event) => event.stopPropagation()}>
           <header className="icon-picker-head">

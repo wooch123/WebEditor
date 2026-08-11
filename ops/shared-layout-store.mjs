@@ -5,6 +5,7 @@ const API_PATH = "/editor/api/layouts";
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 const MAX_LAYOUTS = 200;
 const THEME_COLOR_KEYS = ["bg", "sidebar", "panel", "surface", "elevated", "line", "text", "muted", "accent", "accent2", "positive"];
+const SYSTEM_NODE_TYPES = new Set(["page", "component", "api", "logic", "table", "field", "flow", "role", "storage", "external"]);
 
 function sendJson(response, status, payload) {
   const body = JSON.stringify(payload);
@@ -48,6 +49,61 @@ function normalizeCustomTheme(value) {
   return theme;
 }
 
+function normalizeStringRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).slice(0, 100).map(([key, item]) => [String(key).slice(0, 100), typeof item === "string" ? item.slice(0, 10000) : String(item ?? "").slice(0, 10000)]));
+}
+
+function normalizeSystemProject(value) {
+  if (value == null) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1) throw Object.assign(new Error("시스템 설계 프로젝트 형식이 올바르지 않습니다."), { status: 400 });
+  if (!Array.isArray(value.nodes) || value.nodes.length > 2000 || !Array.isArray(value.bindings) || value.bindings.length > 10000) throw Object.assign(new Error("시스템 설계 Node 또는 연결 데이터가 올바르지 않습니다."), { status: 400 });
+  const nodes = value.nodes.map((node, index) => {
+    if (!node || typeof node !== "object" || Array.isArray(node) || !SYSTEM_NODE_TYPES.has(node.type)) throw Object.assign(new Error(`시스템 설계 Node ${index + 1}의 형식이 올바르지 않습니다.`), { status: 400 });
+    const id = typeof node.id === "string" ? node.id.trim().slice(0, 200) : "";
+    const name = typeof node.name === "string" ? node.name.trim().slice(0, 300) : "";
+    if (!id || !name) throw Object.assign(new Error(`시스템 설계 Node ${index + 1}의 ID 또는 이름이 없습니다.`), { status: 400 });
+    return {
+      id,
+      type: node.type,
+      name,
+      description: typeof node.description === "string" ? node.description.slice(0, 10000) : "",
+      x: Number.isFinite(Number(node.x)) ? Math.max(0, Math.min(10000, Number(node.x))) : 0,
+      y: Number.isFinite(Number(node.y)) ? Math.max(0, Math.min(10000, Number(node.y))) : 0,
+      ...(typeof node.parentId === "string" && node.parentId ? { parentId: node.parentId.slice(0, 200) } : {}),
+      metadata: normalizeStringRecord(node.metadata),
+    };
+  });
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  if (nodeIds.size !== nodes.length) throw Object.assign(new Error("시스템 설계 Node ID가 중복되었습니다."), { status: 400 });
+  const bindings = value.bindings.map((binding, index) => {
+    if (!binding || typeof binding !== "object" || Array.isArray(binding)) throw Object.assign(new Error(`시스템 설계 연결 ${index + 1}의 형식이 올바르지 않습니다.`), { status: 400 });
+    const id = typeof binding.id === "string" ? binding.id.trim().slice(0, 200) : "";
+    const sourceId = typeof binding.sourceId === "string" ? binding.sourceId.trim().slice(0, 200) : "";
+    const targetId = typeof binding.targetId === "string" ? binding.targetId.trim().slice(0, 200) : "";
+    if (!id || !nodeIds.has(sourceId) || !nodeIds.has(targetId)) throw Object.assign(new Error(`시스템 설계 연결 ${index + 1}의 대상 Node가 올바르지 않습니다.`), { status: 400 });
+    const operation = typeof binding.operation === "string" && /^(?:-|[CRUD]{1,4})$/.test(binding.operation) ? binding.operation : "-";
+    return {
+      id,
+      sourceId,
+      targetId,
+      bindingType: typeof binding.bindingType === "string" && binding.bindingType.trim() ? binding.bindingType.trim().slice(0, 100) : "DEPENDENCY",
+      operation,
+      ...(typeof binding.label === "string" && binding.label ? { label: binding.label.slice(0, 300) } : {}),
+      ...(binding.metadata ? { metadata: normalizeStringRecord(binding.metadata) } : {}),
+    };
+  });
+  return {
+    version: 1,
+    id: typeof value.id === "string" && value.id.trim() ? value.id.trim().slice(0, 200) : "system-project",
+    name: typeof value.name === "string" && value.name.trim() ? value.name.trim().slice(0, 300) : "System Project",
+    description: typeof value.description === "string" ? value.description.slice(0, 10000) : "",
+    updatedAt: Number.isFinite(Number(value.updatedAt)) ? Number(value.updatedAt) : Date.now(),
+    nodes,
+    bindings,
+  };
+}
+
 function normalizeLayout(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw Object.assign(new Error("레이아웃 형식이 올바르지 않습니다."), { status: 400 });
   const name = typeof value.name === "string" ? value.name.trim() : "";
@@ -60,7 +116,9 @@ function normalizeLayout(value) {
   const rawPagePanelSize = Number(value.pagePanelSize);
   const pagePanelSize = Number.isFinite(rawPagePanelSize) ? Math.max(200, Math.min(420, Math.round(rawPagePanelSize))) : 236;
   const customTheme = value.themeId === "custom" ? normalizeCustomTheme(value.customTheme) : undefined;
-  return { name, updatedAt, pages: value.pages, themeId: value.themeId, ...(customTheme ? { customTheme } : {}), fontSize, pagePanelPosition, pagePanelSize };
+  const workspaceMode = value.workspaceMode === "system" ? "system" : "layout";
+  const systemProject = normalizeSystemProject(value.systemProject);
+  return { name, updatedAt, pages: value.pages, themeId: value.themeId, ...(customTheme ? { customTheme } : {}), fontSize, pagePanelPosition, pagePanelSize, workspaceMode, ...(systemProject ? { systemProject } : {}) };
 }
 
 export function createSharedLayoutStore(storagePath) {
