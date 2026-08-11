@@ -7,10 +7,34 @@ type WidgetType =
   | "text"
   | "button"
   | "form"
+  | "breadcrumb"
+  | "tabs"
+  | "alert"
+  | "search"
+  | "navMenu"
+  | "accordion"
+  | "stepper"
+  | "timeline"
+  | "divider"
+  | "badgeGroup"
+  | "fileUpload"
+  | "mediaBlock"
   | "stat"
   | "status"
   | "progress"
   | "profile"
+  | "kpiCompare"
+  | "taskSummary"
+  | "deadline"
+  | "budget"
+  | "approval"
+  | "sla"
+  | "teamCard"
+  | "notification"
+  | "storage"
+  | "health"
+  | "goalCard"
+  | "activityCard"
   | "trend"
   | "bar"
   | "line"
@@ -226,12 +250,36 @@ const TOOLBOX: Array<{ category: string; items: Array<{ type: WidgetType; label:
     { type: "text", label: "텍스트 블록", icon: "T", description: "본문 콘텐츠" },
     { type: "button", label: "액션 버튼", icon: "+", description: "주요 동작" },
     { type: "form", label: "입력 폼", icon: "F", description: "필드와 제출" },
+    { type: "breadcrumb", label: "브레드크럼", icon: "/", description: "현재 위치 경로" },
+    { type: "tabs", label: "탭 내비게이션", icon: "⊟", description: "콘텐츠 보기 전환" },
+    { type: "alert", label: "알림 배너", icon: "!", description: "중요 안내와 상태" },
+    { type: "search", label: "검색 영역", icon: "⌕", description: "검색어와 필터" },
+    { type: "navMenu", label: "메뉴 목록", icon: "☰", description: "섹션 내비게이션" },
+    { type: "accordion", label: "아코디언", icon: "⌄", description: "접고 펼치는 내용" },
+    { type: "stepper", label: "단계 표시", icon: "①", description: "절차와 진행 단계" },
+    { type: "timeline", label: "타임라인", icon: "⋮", description: "시간순 이력" },
+    { type: "divider", label: "구분선", icon: "―", description: "영역과 제목 구분" },
+    { type: "badgeGroup", label: "배지 그룹", icon: "●", description: "상태와 분류 표시" },
+    { type: "fileUpload", label: "파일 업로드", icon: "⇧", description: "드래그 파일 첨부" },
+    { type: "mediaBlock", label: "미디어 블록", icon: "▧", description: "이미지와 설명 배치" },
   ]},
   { category: "정보 카드", items: [
     { type: "stat", label: "지표 카드", icon: "%", description: "숫자와 증감" },
     { type: "status", label: "상태 카드", icon: "●", description: "상태 요약" },
     { type: "progress", label: "진행률", icon: "↗", description: "목표 진행" },
     { type: "profile", label: "프로필", icon: "P", description: "담당자 정보" },
+    { type: "kpiCompare", label: "KPI 비교", icon: "↕", description: "현재와 이전 수치" },
+    { type: "taskSummary", label: "업무 요약", icon: "✓", description: "상태별 업무 집계" },
+    { type: "deadline", label: "마감 카드", icon: "D", description: "남은 일정과 우선순위" },
+    { type: "budget", label: "예산 카드", icon: "₩", description: "예산 사용 현황" },
+    { type: "approval", label: "승인 카드", icon: "A", description: "결재 요청과 처리" },
+    { type: "sla", label: "SLA 카드", icon: "S", description: "응답 품질 지표" },
+    { type: "teamCard", label: "팀 카드", icon: "T", description: "구성원과 가용 상태" },
+    { type: "notification", label: "알림 카드", icon: "N", description: "최신 중요 알림" },
+    { type: "storage", label: "스토리지 카드", icon: "▰", description: "용량 사용 현황" },
+    { type: "health", label: "상태 진단", icon: "H", description: "서비스별 건강 상태" },
+    { type: "goalCard", label: "목표 카드", icon: "G", description: "목표와 달성 단계" },
+    { type: "activityCard", label: "활동 카드", icon: "L", description: "최근 변경 활동" },
   ]},
   { category: "인터랙티브 차트", items: [
     { type: "trend", label: "추세 차트", icon: "⌁", description: "기간별 추이" },
@@ -354,16 +402,40 @@ function newId(prefix: string) {
 }
 
 function makeWidget(type: WidgetType, overrides: Partial<Widget> = {}): Widget {
-  const fullTypes: WidgetType[] = ["hero", "text", "form", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "horizontalBar", "waterfall", "bubble", "treemap", "candlestick", "boxPlot", "sankey", "pareto", "board", "editor", "live", "customTable", "kanban", "gantt"];
+  const fullTypes: WidgetType[] = ["hero", "text", "form", "breadcrumb", "tabs", "alert", "search", "navMenu", "accordion", "stepper", "timeline", "divider", "badgeGroup", "fileUpload", "mediaBlock", "trend", "bar", "line", "area", "stackedBar", "scatter", "heatmap", "horizontalBar", "waterfall", "bubble", "treemap", "candlestick", "boxPlot", "sankey", "pareto", "board", "editor", "live", "customTable", "kanban", "gantt"];
   const defaults: Partial<Record<WidgetType, Record<string, string>>> = {
     hero: { subtitle: "팀의 핵심 업무와 현황을 한눈에 확인하세요.", eyebrow: "WORKSPACE" },
     text: { body: "팀이 함께 확인해야 할 안내와 설명을 입력하세요." },
     button: { label: "새 업무 만들기" },
     form: { button: "등록하기" },
+    breadcrumb: { caption: "워크스페이스 / 프로젝트 / 상세" },
+    tabs: { caption: "개요, 업무, 파일을 전환합니다." },
+    alert: { caption: "검토가 필요한 변경 사항이 있습니다." },
+    search: { caption: "업무, 문서, 담당자를 통합 검색합니다." },
+    navMenu: { caption: "현재 페이지의 주요 영역으로 이동합니다." },
+    accordion: { caption: "자주 묻는 질문과 상세 안내를 확인합니다." },
+    stepper: { caption: "요청부터 완료까지의 진행 단계입니다." },
+    timeline: { caption: "최근 업무 변경 이력을 시간순으로 표시합니다." },
+    divider: { caption: "다음 업무 영역" },
+    badgeGroup: { caption: "상태와 우선순위를 한눈에 구분합니다." },
+    fileUpload: { caption: "PDF, DOCX, XLSX · 최대 20MB" },
+    mediaBlock: { caption: "이미지와 핵심 설명을 함께 전달합니다." },
     stat: { value: "₩84.2M", delta: "+12.8%", caption: "전월 대비" },
     status: { value: "정상", caption: "모든 시스템 운영 중" },
     progress: { value: "68", caption: "분기 목표 달성률" },
     profile: { value: "김민준", caption: "프로젝트 오너" },
+    kpiCompare: { value: "128.4M", caption: "전월보다 12.8% 증가" },
+    taskSummary: { value: "48", caption: "이번 주 전체 업무" },
+    deadline: { value: "D-3", caption: "신규 포털 1차 검토" },
+    budget: { value: "68%", caption: "연간 예산 사용률" },
+    approval: { value: "5건", caption: "확인이 필요한 결재" },
+    sla: { value: "99.94%", caption: "최근 30일 가용성" },
+    teamCard: { value: "12명", caption: "현재 온라인 9명" },
+    notification: { value: "3", caption: "읽지 않은 중요 알림" },
+    storage: { value: "72%", caption: "1TB 중 720GB 사용" },
+    health: { value: "정상", caption: "6개 서비스 운영 중" },
+    goalCard: { value: "76%", caption: "3분기 핵심 목표" },
+    activityCard: { value: "24건", caption: "오늘 발생한 변경" },
     trend: { caption: "최근 7일 처리량" },
     bar: { caption: "팀별 완료 업무" },
     line: { caption: "월별 매출 변화" },
@@ -649,6 +721,52 @@ function ExtendedChart({ variant }: { variant: ExtendedChartType }) {
     <div className="advanced-chart-head"><div><strong>{mode === "실적" ? heading.value : heading.target}</strong><span>{heading.label} · {selected + 1}번 데이터 선택</span></div><div className="segment-control">{["실적", "목표"].map((item) => <button key={item} className={mode === item ? "active" : ""} onClick={() => { setMode(item); setSelected(0); }}>{item}</button>)}</div></div>
     {chart}
   </div>;
+}
+
+type BasicElementType = "breadcrumb" | "tabs" | "alert" | "search" | "navMenu" | "accordion" | "stepper" | "timeline" | "divider" | "badgeGroup" | "fileUpload" | "mediaBlock";
+
+function BasicElementPreview({ variant, title, caption }: { variant: BasicElementType; title: string; caption: string }) {
+  const [selected, setSelected] = useState(0);
+  const [expanded, setExpanded] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+  const [query, setQuery] = useState("");
+  const [fileName, setFileName] = useState("");
+  const tabs = ["개요", "업무", "파일"];
+
+  if (variant === "breadcrumb") return <nav className="basic-breadcrumb" aria-label="페이지 경로">{["워크스페이스", "프로젝트", title].map((item, index) => <button key={item} className={selected === index ? "active" : ""} onClick={() => setSelected(index)}>{item}{index < 2 && <span>/</span>}</button>)}</nav>;
+  if (variant === "tabs") return <div className="basic-tabs"><div role="tablist">{tabs.map((item, index) => <button role="tab" aria-selected={selected === index} className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}>{item}<span>{[8, 14, 5][index]}</span></button>)}</div><p><strong>{tabs[selected]}</strong> 보기 · {caption}</p></div>;
+  if (variant === "alert") return dismissed ? <button className="alert-restore" onClick={() => setDismissed(false)}>알림 다시 표시</button> : <div className="basic-alert"><span>!</span><div><strong>{title}</strong><p>{caption}</p></div><button onClick={() => setDismissed(true)} aria-label="알림 닫기">×</button></div>;
+  if (variant === "search") return <div className="basic-search"><label><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="통합 검색" /><kbd>⌘ K</kbd></label><div>{["전체", "업무", "문서", "사람"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}>{item}</button>)}<span>{query ? `‘${query}’ 검색 중` : caption}</span></div></div>;
+  if (variant === "navMenu") return <nav className="basic-nav-menu">{["대시보드", "진행 업무", "팀 문서", "설정"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}><i>{["⌂", "✓", "▤", "⚙"][index]}</i><span>{item}</span><b>{[12, 8, 24, 0][index] || ""}</b></button>)}</nav>;
+  if (variant === "accordion") return <div className="basic-accordion">{["업무 등록 기준", "담당자 변경 방법", "완료 처리 규칙"].map((item, index) => <div className={expanded === index ? "open" : ""} key={item}><button onClick={() => setExpanded(expanded === index ? -1 : index)} aria-expanded={expanded === index}><strong>{item}</strong><span>{expanded === index ? "−" : "+"}</span></button>{expanded === index && <p>{caption}</p>}</div>)}</div>;
+  if (variant === "stepper") return <div className="basic-stepper">{["요청", "검토", "승인", "완료"].map((item, index) => <button key={item} className={`${selected === index ? "active" : ""} ${selected > index ? "done" : ""}`} onClick={() => setSelected(index)}><i>{selected > index ? "✓" : index + 1}</i><span>{item}</span></button>)}</div>;
+  if (variant === "timeline") return <div className="basic-timeline">{[{ time: "10:24", text: "김민준님이 업무를 완료했습니다." }, { time: "09:48", text: "디자인 검토 의견이 등록되었습니다." }, { time: "어제", text: "프로젝트 일정이 변경되었습니다." }].map((item, index) => <button className={selected === index ? "active" : ""} key={item.time} onClick={() => setSelected(index)}><i /><span><b>{item.text}</b><small>{item.time}</small></span></button>)}</div>;
+  if (variant === "divider") return <div className="basic-divider"><i /><button onClick={() => setSelected((value) => (value + 1) % 3)}>{[title, caption, "새로운 섹션"][selected]}</button><i /></div>;
+  if (variant === "badgeGroup") return <div className="basic-badges">{["진행 중", "검토 필요", "승인 완료", "높은 우선순위", "자동화"].map((item, index) => <button className={`tone-${index % 4} ${selected === index ? "active" : ""}`} key={item} onClick={() => setSelected(index)}><i />{item}</button>)}</div>;
+  if (variant === "fileUpload") return <label className={`basic-upload ${fileName ? "has-file" : ""}`}><input type="file" onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} /><span>{fileName ? "✓" : "⇧"}</span><strong>{fileName || "파일을 선택하거나 여기로 드래그"}</strong><small>{fileName ? "파일 선택 완료" : caption}</small></label>;
+  return <button className={`basic-media ${selected ? "alternate" : ""}`} onClick={() => setSelected((value) => value ? 0 : 1)}><span className="media-visual"><i /><b /><em /></span><span><small>FEATURED</small><strong>{title}</strong><p>{caption}</p></span></button>;
+}
+
+type InfoCardType = "kpiCompare" | "taskSummary" | "deadline" | "budget" | "approval" | "sla" | "teamCard" | "notification" | "storage" | "health" | "goalCard" | "activityCard";
+
+function InfoCardPreview({ variant, value, caption }: { variant: InfoCardType; value: string; caption: string }) {
+  const [selected, setSelected] = useState(0);
+  const [action, setAction] = useState("대기");
+  const [progress, setProgress] = useState(76);
+  const items = ["완료", "진행", "대기"];
+
+  if (variant === "kpiCompare") return <div className="info-card kpi-card"><div><span>이번 달</span><strong>₩{value}</strong><small>↑ {caption}</small></div><div className="compare-values"><button className={selected === 0 ? "active" : ""} onClick={() => setSelected(0)}>현재 <b>128.4</b></button><button className={selected === 1 ? "active" : ""} onClick={() => setSelected(1)}>이전 <b>113.8</b></button></div></div>;
+  if (variant === "taskSummary") return <div className="info-card task-summary"><header><span>전체 업무</span><strong>{value}</strong></header><div>{items.map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}><i className={`tone-${index}`} /><span>{item}</span><b>{[24, 16, 8][index]}</b></button>)}</div><small>{caption}</small></div>;
+  if (variant === "deadline") return <div className="info-card deadline-card"><span className="deadline-value">{value}</span><div><strong>{caption}</strong><p>8월 14일 · 오후 4:00</p><button onClick={() => setAction(action === "확인" ? "대기" : "확인")}>{action === "확인" ? "확인 완료" : "일정 확인"}</button></div></div>;
+  if (variant === "budget") return <div className="info-card budget-card"><header><span>예산 사용</span><strong>{selected ? "₩820M" : value}</strong><button onClick={() => setSelected(selected ? 0 : 1)}>{selected ? "금액" : "비율"}</button></header><div className="info-progress"><i style={{ width: selected ? "82%" : value }} /></div><footer><span>{caption}</span><b>잔여 ₩320M</b></footer></div>;
+  if (variant === "approval") return <div className={`info-card approval-card state-${action}`}><header><span className="avatar avatar-accent">YK</span><div><strong>디자인 예산 증액</strong><small>{caption}</small></div><b>{value}</b></header><footer>{action === "대기" ? <><button onClick={() => setAction("반려")}>반려</button><button onClick={() => setAction("승인")}>승인</button></> : <button onClick={() => setAction("대기")}>{action} 완료 · 되돌리기</button>}</footer></div>;
+  if (variant === "sla") return <div className="info-card sla-card"><header><span>SLA</span><strong>{selected ? "182ms" : value}</strong></header><div className="sla-orbit"><i /><b>{selected ? "응답" : "가용"}</b></div><footer>{["가용성", "응답속도"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}>{item}</button>)}</footer></div>;
+  if (variant === "teamCard") return <div className="info-card team-card"><header><div><strong>{value}</strong><span>{caption}</span></div><button>＋ 초대</button></header><div>{["KM", "SJ", "YL", "HJ", "+8"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}><span className={`avatar tone-${index % 4}`}>{item}</span><i /></button>)}</div></div>;
+  if (variant === "notification") return <button className={`info-card notification-card ${action === "읽음" ? "read" : ""}`} onClick={() => setAction(action === "읽음" ? "대기" : "읽음")}><span>!</span><div><strong>보안 정책이 업데이트되었습니다.</strong><p>{caption}</p><small>12분 전 · 클릭하여 {action === "읽음" ? "읽지 않음" : "읽음"} 처리</small></div><b>{value}</b></button>;
+  if (variant === "storage") return <div className="info-card storage-card"><header><span>스토리지</span><strong>{selected === 0 ? value : ["46%", "18%"][selected - 1]}</strong></header><div className="storage-ring" style={{ "--storage": selected === 0 ? value : ["46%", "18%"][selected - 1] } as CSSProperties}><span>{["전체", "문서", "미디어"][selected]}</span></div><footer>{["전체", "문서", "미디어"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}>{item}</button>)}</footer></div>;
+  if (variant === "health") return <div className="info-card health-card"><header><strong>{value}</strong><span>{caption}</span></header><div>{["API", "WEB", "DB", "QUEUE"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}><i /><span>{item}</span><b>{index === 3 ? "주의" : "정상"}</b></button>)}</div></div>;
+  if (variant === "goalCard") return <div className="info-card goal-card"><header><span>GOAL</span><strong>{caption}</strong></header><div><b>{progress}%</b><span><i style={{ width: `${progress}%` }} /></span></div><footer><small>목표 {value}</small><button onClick={() => setProgress((current) => current >= 100 ? 76 : current + 4)}>＋ 진행 반영</button></footer></div>;
+  return <div className="info-card activity-card"><header><strong>{value}</strong><span>{caption}</span></header>{["문서가 업데이트됨", "새 댓글이 등록됨", "업무 상태가 변경됨"].map((item, index) => <button className={selected === index ? "active" : ""} key={item} onClick={() => setSelected(index)}><i>{["D", "C", "T"][index]}</i><span><b>{item}</b><small>{["방금", "18분 전", "1시간 전"][index]}</small></span></button>)}</div>;
 }
 
 function customTableCellDefault(column: CustomTableColumn, rowIndex = 0): string | boolean {
@@ -1119,6 +1237,19 @@ function WidgetContent({ widget, onSettingsChange }: { widget: Widget; onSetting
       return <div className="button-widget"><button>{widget.settings.label || "새 업무 만들기"}<span>＋</span></button><small>클릭 가능한 주요 액션</small></div>;
     case "form":
       return <div className="form-widget"><label>업무 제목<input placeholder="업무명을 입력하세요" /></label><label>카테고리<select defaultValue="운영"><option>운영</option><option>기획</option><option>디자인</option></select></label><button>{widget.settings.button}</button></div>;
+    case "breadcrumb":
+    case "tabs":
+    case "alert":
+    case "search":
+    case "navMenu":
+    case "accordion":
+    case "stepper":
+    case "timeline":
+    case "divider":
+    case "badgeGroup":
+    case "fileUpload":
+    case "mediaBlock":
+      return <BasicElementPreview variant={widget.type} title={widget.title} caption={caption} />;
     case "stat":
       return <div className="stat-widget"><span className="metric-icon">↗</span><strong>{value}</strong><div><b>{widget.settings.delta}</b><span>{widget.settings.caption}</span></div><div className="micro-bars">{[34, 52, 45, 64, 58, 78, 70, 91].map((height, i) => <i key={i} style={{ height: `${height}%` }} />)}</div></div>;
     case "status":
@@ -1127,6 +1258,19 @@ function WidgetContent({ widget, onSettingsChange }: { widget: Widget; onSetting
       return <div className="progress-widget"><div className="progress-ring" style={{ "--progress": `${value}%` } as CSSProperties}><strong>{value}%</strong></div><div><b>목표까지 순항 중</b><p>{caption}</p><span className="positive">+8% 이번 주</span></div></div>;
     case "profile":
       return <div className="profile-widget"><span className="avatar avatar-large">{value.slice(0, 1) || "김"}</span><strong>{value}</strong><p>{caption}</p><div className="profile-meta"><span>진행 업무 <b>12</b></span><span>완료율 <b>91%</b></span></div></div>;
+    case "kpiCompare":
+    case "taskSummary":
+    case "deadline":
+    case "budget":
+    case "approval":
+    case "sla":
+    case "teamCard":
+    case "notification":
+    case "storage":
+    case "health":
+    case "goalCard":
+    case "activityCard":
+      return <InfoCardPreview variant={widget.type} value={value} caption={caption} />;
     case "trend":
     case "bar":
       return <MiniChart variant={widget.type} />;
@@ -1180,7 +1324,7 @@ function WidgetContent({ widget, onSettingsChange }: { widget: Widget; onSetting
 }
 
 function SettingsPanel({ widget, onChange, onClose, onDelete, onDuplicate }: { widget: Widget; onChange: (patch: Partial<Widget>, settings?: Record<string, string>) => void; onClose: () => void; onDelete: () => void; onDuplicate: () => void }) {
-  const hasValue = ["stat", "progress", "profile", "donut", "gauge", "status"].includes(widget.type);
+  const hasValue = ["stat", "progress", "profile", "donut", "gauge", "status", "kpiCompare", "taskSummary", "deadline", "budget", "approval", "sla", "teamCard", "notification", "storage", "health", "goalCard", "activityCard"].includes(widget.type);
   const hasCaption = !["hero", "text", "button", "form"].includes(widget.type);
   return (
     <div className={`settings-panel ${widget.type === "customTable" ? "custom-table-settings" : ""}`} onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}>
