@@ -1847,10 +1847,13 @@ export default function Home() {
             <span className="nav-label">PAGES</span>
             <span className="nav-helper">최상위 페이지의 화살표로 하위 목록 접기</span>
             {pageTree.map(({ page, depth }) => {
-              const hasChildren = depth === 0 && pages.some((child) => child.parentId === page.id);
+              const isTopLevel = depth === 0;
+              const hasChildren = isTopLevel && pages.some((child) => child.parentId === page.id);
               const collapsed = hasChildren && collapsedTopPageIds.has(page.id);
-              return <div key={page.id} className={`page-nav-row ${depth > 0 ? "is-child" : ""} ${hasChildren ? "has-children" : ""} ${collapsed ? "is-collapsed" : ""}`} style={{ "--page-depth": Math.min(depth, 4) } as CSSProperties}>
-                {hasChildren && <button className="page-collapse-toggle" type="button" aria-expanded={!collapsed} aria-label={`${page.name} 하위 페이지 ${collapsed ? "펼치기" : "접기"}`} title={`하위 페이지 ${collapsed ? "펼치기" : "접기"}`} onClick={() => toggleTopPageCollapse(page.id)}><span>›</span></button>}
+              return <div key={page.id} className={`page-nav-row ${isTopLevel ? "is-top-level" : "is-child"} ${hasChildren ? "has-children" : ""} ${collapsed ? "is-collapsed" : ""}`} style={{ "--page-depth": depth } as CSSProperties}>
+                {isTopLevel && (hasChildren
+                  ? <button className="page-collapse-toggle" type="button" aria-expanded={!collapsed} aria-label={`${page.name} 하위 페이지 ${collapsed ? "펼치기" : "접기"}`} title={`하위 페이지 ${collapsed ? "펼치기" : "접기"}`} onClick={() => toggleTopPageCollapse(page.id)}><span>›</span></button>
+                  : <span className="page-collapse-toggle page-collapse-placeholder" aria-hidden="true"><span>›</span></span>)}
                 <button className={`page-link ${activePageId === page.id ? "active" : ""}`} onClick={() => { setActivePageId(page.id); setSelectedWidgetId(null); }}><PageIcon glyph={page.icon} tone={page.iconTone} /><b title={page.name}>{page.name}</b><i>{page.widgets.length}</i></button>
                 <div className="page-row-actions"><button className="page-icon-edit" onClick={() => openIconPicker(page.id)} aria-label={`${page.name} 아이콘 변경`} title="페이지 아이콘 변경">✦</button><button className="page-child-add" onClick={() => addPage(page.id)} aria-label={`${page.name}에 하위 페이지 추가`} title="하위 페이지 추가">＋</button><button className="page-delete" onClick={() => deletePage(page.id)} aria-label={`${page.name} 삭제`} title="페이지 삭제">×</button></div>
               </div>;
